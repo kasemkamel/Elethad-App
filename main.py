@@ -62,6 +62,7 @@ class LoginWindow(tk.Toplevel):
             return result[0]
         return None
 
+
 class Sidebar(tk.Frame):
     def __init__(self, parent, toggle_callback, role):
         super().__init__(parent, width=1000, bg='lightgray')
@@ -77,31 +78,41 @@ class Sidebar(tk.Frame):
         buttons = []
         if self.role == "Ac":
             buttons = [
+                ("Main", self.show_main), 
                 ("Frame 1", self.show_frame_1),
                 ("Frame 2", self.show_frame_2),
                 ("Frame 3", self.show_frame_3),
             ]
         elif self.role == "W":
             buttons = [
+                ("Main", self.show_main), 
                 ("Frame 4", self.show_frame_4),
                 ("Frame 5", self.show_frame_5),
             ]
         elif self.role == "Admin":
             buttons = [
+                ("Main", self.show_main), 
                 ("Frame 1", self.show_frame_1),
                 ("Frame 2", self.show_frame_2),
                 ("Frame 3", self.show_frame_3),
                 ("Frame 4", self.show_frame_4),
                 ("Frame 5", self.show_frame_5),
             ]
+        else:
+            buttons = [
+                ("Main", self.show_main),  
+            ]
 
         for text, command in buttons:
-            btn = tk.Button(self, text=text, command=command)
+            btn = tk.Button(self, text=text, width= 10, command=command)
             btn.pack(fill='x', padx=10, pady=10)
 
     def toggle_sidebar(self):
         self.toggle_callback()
 
+    def show_main(self):
+        self.master.switch_frame(MainFrame)
+    
     def show_frame_1(self):
         self.master.switch_frame(Frame1)
 
@@ -117,6 +128,7 @@ class Sidebar(tk.Frame):
     def show_frame_5(self):
         self.master.switch_frame(Frame5)
 
+
 class Header(tk.Frame):
     def __init__(self, parent, toggle_callback, logout_callback):
         super().__init__(parent, bg="darkgray", height=50)
@@ -131,7 +143,13 @@ class Header(tk.Frame):
         self.toggle_button = tk.Button(self, text="==", command=toggle_callback)
         self.toggle_button.pack(side="right", padx=10, pady=10)
 
+
+
         
+class MainFrame(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg='#f1a366')
+
 
 class Frame1(tk.Frame):
     def __init__(self, parent):
@@ -139,11 +157,13 @@ class Frame1(tk.Frame):
         label = tk.Label(self, text="This is Frame 1", font=("Arial", 16), bg="lightblue")
         label.pack(pady=20)
 
+
 class Frame2(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="lightgreen")
         label = tk.Label(self, text="This is Frame 2", font=("Arial", 16), bg="lightgreen")
         label.pack(pady=20)
+
 
 class Frame3(tk.Frame):
     def __init__(self, parent):
@@ -151,11 +171,13 @@ class Frame3(tk.Frame):
         label = tk.Label(self, text="This is Frame 3", font=("Arial", 16), bg="lightpink")
         label.pack(pady=20)
 
+
 class Frame4(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="lightyellow")
         label = tk.Label(self, text="This is Frame 4 (Warehouse Worker)", font=("Arial", 16), bg="lightyellow")
         label.pack(pady=20)
+
 
 class Frame5(tk.Frame):
     def __init__(self, parent):
@@ -179,14 +201,14 @@ class App(tk.Tk):
 
 
         self.header = Header(self, self.toggle_sidebar, self.logout)
-
+        
 
         self.sidebar = Sidebar(self, self.toggle_sidebar, self.user_role)
 
         self.content_frame = None
         self.sidebar_visible = False
 
-        self.switch_frame(Frame1)
+        self.switch_frame(MainFrame)
         
         # if not self.user_role:
         #     self.destroy()
