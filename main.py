@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import sqlite3
+from database import *
 
 
 class LoginWindow(tk.Toplevel):
@@ -53,11 +54,8 @@ class LoginWindow(tk.Toplevel):
             messagebox.showerror("Error", "Invalid username or password!")
 
     def get_user_role(self, username, password):
-        connection = sqlite3.connect("users.db")
-        cursor = connection.cursor()
-        cursor.execute("SELECT role FROM users WHERE username = ? AND password = ?", (username, password))
-        result = cursor.fetchone()
-        connection.close()
+        result = self.parent.users.select_by_credentials(username, password)
+        print(result)
 
         if result:
             return result[0]
@@ -98,14 +96,25 @@ class Sidebar(tk.Frame):
                 ("Frame 3", self.show_frame_3),
                 ("Frame 4", self.show_frame_4),
                 ("Frame 5", self.show_frame_5),
+                ("Admin Farme 1", self.show_admin_frame_1),
+                ("Admin Farme 2", self.show_admin_frame_2),
             ]
+        
+        # don't forget to remove else 
         else:
             buttons = [
-                ("Main", self.show_main),
+                ("Main", self.show_main), 
+                ("Frame 1", self.show_frame_1),
+                ("Frame 2", self.show_frame_2),
+                ("Frame 3", self.show_frame_3),
+                ("Frame 4", self.show_frame_4),
+                ("Frame 5", self.show_frame_5),
+                ("Admin Farme 1", self.show_admin_frame_1),
+                ("Admin Farme 2", self.show_admin_frame_2),
             ]
-
+            
         for text, command in buttons:
-            btn = tk.Button(self, text=text, width= 10, command=command)
+            btn = tk.Button(self, text=text,  command=command)
             btn.pack(fill='x', padx=10, pady=10)
 
 
@@ -126,7 +135,13 @@ class Sidebar(tk.Frame):
 
     def show_frame_5(self):
         self.master.switch_frame(Frame5)
-
+        
+    def show_admin_frame_1(self):
+        self.master.switch_frame(AdminFarme1)
+    
+    def show_admin_frame_2(self):
+        self.master.switch_frame(AdminFarme2)
+    
 
 class Header(tk.Frame):
     def __init__(self, parent, toggle_callback, logout_callback):
@@ -250,7 +265,18 @@ class Frame5(tk.Frame):
         label.pack(pady=20)
 
 
+class AdminFarme1(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg="lightgray")
+        label = tk.Label(self, text="This is admin Frame no. one", font=("Arial", 16), bg="#11f3c9")
+        label.pack(pady=20)
 
+
+class AdminFarme2(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg="lightgray")
+        label = tk.Label(self, text="This is admin Frame no. Two", font=("Arial", 16), bg="#11f3c9")
+        label.pack(pady=20)
 
 
 class App(tk.Tk):
@@ -260,13 +286,15 @@ class App(tk.Tk):
         self.title("Elethat Company")
         self.state("zoomed")
         self.wm_minsize(800, 600)
+        self.db = Database()
+        self.users = User(self.db)
         
         self.user_name = None
         self.user_role = None
 
 
-        # self.login_window = LoginWindow(self)
-        # self.wait_window(self.login_window) 
+        self.login_window = LoginWindow(self)
+        self.wait_window(self.login_window) 
 
         
         
@@ -279,8 +307,8 @@ class App(tk.Tk):
 
         self.switch_frame(MainFrame)
         
-        # if not self.user_role:
-        #     self.destroy()
+        if not self.user_role:
+            self.destroy()
 
     def set_user(self, username, role):
         self.user_role = role
