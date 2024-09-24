@@ -15,8 +15,8 @@ def setup_users_database():
     
     # Insert test users (e.g., plain text for demo; use hashed passwords in production)
     users = [
-        ('accountant_user', 'password1', 'Ac'),
-        ('warehouse_user', 'password2', 'W'),
+        ('accountant_user', 'password1', 'Ac'), # Ac = Accountant
+        ('warehouse_user', 'password2', 'W'), # W = Warehouse Worker
         ('admin_user', 'adminpass', 'Admin'),
         ("kasem", "kss1010", 'Admin')
     ]
