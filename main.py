@@ -101,7 +101,7 @@ class Sidebar(tk.Frame):
             ]
         else:
             buttons = [
-                ("Main", self.show_main), 
+                ("Main", self.show_main),
             ]
 
         for text, command in buttons:
@@ -146,16 +146,16 @@ class Header(tk.Frame):
 
 
 class ResizableImageFrame(tk.Frame):
-    def __init__(self, parent, image_path, bg):
-        super().__init__(parent, bg=bg)
+    def __init__(self, parent, image_path):
+        super().__init__(parent)
         self.pack_propagate(False) 
         self.original_image = Image.open(image_path)
         self.image = ImageTk.PhotoImage(self.original_image)
 
-        self.canvas = tk.Canvas(self, bg=bg, highlightthickness=0)
+        self.canvas = tk.Canvas(self, highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
 
-        self.canvas.create_rectangle(0, 0, self.canvas.winfo_reqwidth(), self.canvas.winfo_reqheight(), fill=bg, outline=bg)
+        self.canvas.create_rectangle(0, 0, self.canvas.winfo_reqwidth(), self.canvas.winfo_reqheight())
         self.image_id = self.canvas.create_image(0, 0, anchor="nw", image=self.image)
 
         self.bind("<Configure>", self.resize_image)
@@ -171,24 +171,29 @@ class ResizableImageFrame(tk.Frame):
 
         self.canvas.config(width=new_width, height=new_height)
 
-        
+
+
+
+
+
 class MainFrame(tk.Frame):
     def __init__(self, parent):
-        self.bg = '#52DCF5'
+        self.bg = '#119CB4'
         super().__init__(parent, bg=self.bg)
-        label = tk.Label(self, text='Welcome to Elethad Company', font=('Arial', 20, 'bold'), fg='#1B0C00', bg=self.bg)
-        label.pack(pady=30)
+        label = tk.Label(self, text='Welcome to Elethad Company', font=('Arial', 20, 'bold'), fg='#1B0C00', bg=self.bg) #
+        label.pack(pady=10)
+        
         
         imagesPathesList = ['t1.jpeg', 't2.jpeg', 't3.jpeg', 't4.jpeg']
         
         frame1 = tk.Frame(self, )
         frame1.pack(expand=True, fill="both")
         
-        imageFrameRightUp = ResizableImageFrame(frame1, imagesPathesList[0], bg= self.bg)
+        imageFrameRightUp = ResizableImageFrame(frame1, imagesPathesList[0])
         imageFrameRightUp.grid(row=0, column=1, sticky="nsew")
         frame1.grid_columnconfigure(1, weight=1)
         
-        imageFrameLeftUp = ResizableImageFrame(frame1, imagesPathesList[1], bg= self.bg)
+        imageFrameLeftUp = ResizableImageFrame(frame1, imagesPathesList[1])
         imageFrameLeftUp.grid(row=0, column=0, sticky="nsew")
         frame1.grid_columnconfigure(0, weight=1)
         
@@ -199,19 +204,16 @@ class MainFrame(tk.Frame):
         frame2 = tk.Frame(self, )
         frame2.pack(expand=True, fill="both")
 
-        imageFrameRightDown = ResizableImageFrame(frame2, imagesPathesList[2], bg= self.bg)
+        imageFrameRightDown = ResizableImageFrame(frame2, imagesPathesList[2])
         imageFrameRightDown.grid(row=0, column=1, sticky="nsew")
         frame2.grid_columnconfigure(1, weight=1)
         
-        imageFrameLeftDown = ResizableImageFrame(frame2, imagesPathesList[3], bg= self.bg)
+        imageFrameLeftDown = ResizableImageFrame(frame2, imagesPathesList[3])
         imageFrameLeftDown.grid(row=0, column=0, sticky="nsew")
         frame2.grid_columnconfigure(0, weight=1)
 
         frame2.grid_rowconfigure(0, weight=1) 
         
-        
-        
-
 
 class Frame1(tk.Frame):
     def __init__(self, parent):
@@ -257,6 +259,7 @@ class App(tk.Tk):
 
         self.title("Elethat Company")
         self.state("zoomed")
+        self.wm_minsize(800, 600)
         
         self.user_name = None
         self.user_role = None
