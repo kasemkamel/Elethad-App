@@ -25,8 +25,8 @@ class Database:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             description TEXT,
-            quantity INTEGER NOT NULL,
-            expiry_date DATE,
+            quantity INTEGER NOT NULL DEFAULT 0,
+            price FLOAT,
             supplier_id INTEGER,
             FOREIGN KEY (supplier_id) REFERENCES Suppliers(id)
         )
@@ -76,7 +76,6 @@ class Database:
         ''')
 
         self.close_db(conn)
-        print("Database and tables created successfully.")
 
 
 class User:
@@ -89,9 +88,7 @@ class User:
             cursor.execute('''
             INSERT INTO Users (username, password, role) VALUES (?, ?, ?)
             ''', (username, password, role))
-            print("User inserted successfully.")
         except sqlite3.IntegrityError as e:
-            print(f"Error inserting user: {e}")
         self.db.close_db(conn)
 
     def update(self, user_id, username=None, password=None, role=None):
@@ -116,9 +113,7 @@ class User:
             SET {', '.join(updates)}
             WHERE id = ?
             ''', parameters)
-            print("User updated successfully.")
         else:
-            print("No fields to update.")
         self.db.close_db(conn)
 
     def delete(self, user_id):
@@ -126,7 +121,6 @@ class User:
         cursor.execute('''
         DELETE FROM Users WHERE id = ?
         ''', (user_id,))
-        print("User deleted successfully.")
         self.db.close_db(conn)
 
     def select_all(self):
@@ -166,7 +160,6 @@ class Medicine:
         cursor.execute('''
         INSERT INTO Medicines (name, description, price, supplier_id) VALUES (?, ?, ?, ?)
         ''', (name, description, price, supplier_id))
-        print("Medicine inserted successfully.")
         self.db.close_db(conn)
 
     def update(self, medicine_id, name=None, description=None, price=None, supplier_id=None):
@@ -194,9 +187,7 @@ class Medicine:
             SET {', '.join(updates)}
             WHERE id = ?
             ''', parameters)
-            print("Medicine updated successfully.")
         else:
-            print("No fields to update.")
         self.db.close_db(conn)
 
     def delete(self, medicine_id):
@@ -204,7 +195,6 @@ class Medicine:
         cursor.execute('''
         DELETE FROM Medicines WHERE id = ?
         ''', (medicine_id,))
-        print("Medicine deleted successfully.")
         self.db.close_db(conn)
 
     def select_all(self):
@@ -226,7 +216,6 @@ class Supplier:
         cursor.execute('''
         INSERT INTO Suppliers (name, contact_info) VALUES (?, ?)
         ''', (name, contact_info))
-        print("Supplier inserted successfully.")
         self.db.close_db(conn)
 
     def update(self, supplier_id, name=None, contact_info=None):
@@ -248,9 +237,7 @@ class Supplier:
             SET {', '.join(updates)}
             WHERE id = ?
             ''', parameters)
-            print("Supplier updated successfully.")
         else:
-            print("No fields to update.")
         self.db.close_db(conn)
 
     def delete(self, supplier_id):
@@ -258,7 +245,6 @@ class Supplier:
         cursor.execute('''
         DELETE FROM Suppliers WHERE id = ?
         ''', (supplier_id,))
-        print("Supplier deleted successfully.")
         self.db.close_db(conn)
 
     def select_all(self):
@@ -270,21 +256,46 @@ class Supplier:
         self.db.close_db(conn)
         return suppliers
 
-
+    def select_id_name(self):
+        conn, cursor = self.db.connect_db()
+        cursor.execute("SELECT id, name FROM Suppliers")
+        suppliers = cursor.fetchall()
+        conn.close()
+        return suppliers
+        
+        
+        
 class Stock:
     def __init__(self, db):
         self.db = db
 
     def insert(self, medicine_id, quantity):
         conn, cursor = self.db.connect_db()
-        cursor.execute('''
-        INSERT INTO Stock (medicine_id, quantity) VALUES (?, ?)
-        ''', (medicine_id, quantity))
-        print("Stock entry inserted successfully.")
-        self.db.close_db(conn)
+        try:
+            cursor.execute('''INSERT INTO Stock (medicine_id, quantity) VALUES (?, ?)''', (medicine_id, quantity))
+            
+            cursor.execute('''
+                UPDATE Medicines
+                SET quantity = quantity + ?
+                WHERE id = ?
+            ''', (quantity, medicine_id))
+            
+            conn.commit()
+        except sqlite3.Error as e:
+        finally:
+            self.db.close_db(conn)
+
 
     def update(self, stock_id, medicine_id=None, quantity=None):
         conn, cursor = self.db.connect_db()
+    
+        old_quantity = None
+
+        if quantity is not None:
+            cursor.execute('''SELECT quantity, medicine_id FROM Stock WHERE id = ?''', (stock_id,))
+            stock_entry = cursor.fetchone()
+            if stock_entry:
+                old_quantity, medicine_id = stock_entry 
         updates = []
         parameters = []
 
@@ -302,18 +313,45 @@ class Stock:
             SET {', '.join(updates)}
             WHERE id = ?
             ''', parameters)
-            print("Stock entry updated successfully.")
+
+            if quantity is not None:
+                quantity_difference = (quantity - old_quantity) if old_quantity is not None else quantity
+                cursor.execute('''
+                    UPDATE Medicines
+                    SET quantity = quantity + ?
+                    WHERE id = ?
+                ''', (quantity_difference, medicine_id))
+
+            conn.commit() 
         else:
-            print("No fields to update.")
+        
         self.db.close_db(conn)
 
     def delete(self, stock_id):
         conn, cursor = self.db.connect_db()
-        cursor.execute('''
-        DELETE FROM Stock WHERE id = ?
-        ''', (stock_id,))
-        print("Stock entry deleted successfully.")
+
+        # Fetch the quantity and medicine_id before deletion
+        cursor.execute('''SELECT quantity, medicine_id FROM Stock WHERE id = ?''', (stock_id,))
+        stock_entry = cursor.fetchone()
+
+        if stock_entry:
+            quantity, medicine_id = stock_entry
+
+            # Delete the stock entry
+            cursor.execute('''DELETE FROM Stock WHERE id = ?''', (stock_id,))
+            
+            # Update the Medicines table to decrease the total quantity
+            cursor.execute('''
+                UPDATE Medicines
+                SET quantity = quantity - ?
+                WHERE id = ?
+            ''', (quantity, medicine_id))
+            
+            conn.commit()  # Commit both operations
+        else:
+        
         self.db.close_db(conn)
+
 
     def select_all(self):
         conn, cursor = self.db.connect_db()
@@ -344,7 +382,6 @@ class Transaction:
         INSERT INTO Transactions (medicine_id, transaction_type, quantity, user_id, date)
         VALUES (?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
         ''', (medicine_id, transaction_type, quantity, user_id, date))
-        print("Transaction inserted successfully.")
         self.db.close_db(conn)
 
     def select_all(self):
@@ -377,5 +414,9 @@ class Transaction:
 
 
 # db = Database()
+# db.create_database()
 # user_manager = User(db)
+# # default
 # user_manager.insert('admin', 'admin', 'admin')
+# print(user_manager.select_all())
+

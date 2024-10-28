@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import sqlite3
@@ -55,7 +56,6 @@ class LoginWindow(tk.Toplevel):
 
     def get_user_role(self, username, password):
         result = self.parent.users.select_by_credentials(username, password)
-        print(result)
 
         if result:
             return result[0]
@@ -137,10 +137,10 @@ class Sidebar(tk.Frame):
         self.master.switch_frame(Frame5)
         
     def show_admin_frame_1(self):
-        self.master.switch_frame(AdminFarme1)
+        self.master.switch_frame(AdminFrame1)
     
     def show_admin_frame_2(self):
-        self.master.switch_frame(AdminFarme2)
+        self.master.switch_frame(AdminFrame2)
     
 
 class Header(tk.Frame):
@@ -185,10 +185,6 @@ class ResizableImageFrame(tk.Frame):
         self.canvas.itemconfig(self.image_id, image=self.image)
 
         self.canvas.config(width=new_width, height=new_height)
-
-
-
-
 
 
 class MainFrame(tk.Frame):
@@ -265,14 +261,199 @@ class Frame5(tk.Frame):
         label.pack(pady=20)
 
 
-class AdminFarme1(tk.Frame):
+class AdminFrame1(tk.Frame):
     def __init__(self, parent):
-        super().__init__(parent, bg="lightgray")
-        label = tk.Label(self, text="This is admin Frame no. one", font=("Arial", 16), bg="#11f3c9")
-        label.pack(pady=20)
+        self.bg = 'lightblue'
+        super().__init__(parent, bg=self.bg)
+        self.parent = parent
+        self.supplier_id = None
+        self.create_widgets()
+
+    def create_widgets(self):
+        leftFrame = tk.Frame(self, )
+        leftFrame.pack(expand=True, fill="both", side='left')
+        
+        rightFrame = tk.Frame(self, )
+        rightFrame.pack(expand=True, fill="both", side='right')
+        
+        
+        bottomRightFrame = tk.Frame(rightFrame, )
+        bottomRightFrame.grid(row=0, column=1, sticky="nsew")
+        
+        bottomleftFrame = tk.Frame(rightFrame, )
+        bottomleftFrame.grid(row=0, column=0, sticky="nsew")
+        
+        
+        # top Right Frame ## user frame 
+        topRightFrame = tk.Frame(rightFrame, )
+        topRightFrame.grid(row=0, column=1, sticky="nsew")
+
+        title_label = tk.Label(topRightFrame, text="Add New User", font=('Arial', 20, 'bold'), bg=self.bg)
+        title_label.grid(row=0, column=0, columnspan=2, pady=20)
+
+        username_label = tk.Label(topRightFrame, text="Username:", bg=self.bg)
+        username_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        self.username_entry = tk.Entry(topRightFrame)
+        self.username_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+
+        password_label = tk.Label(topRightFrame, text="Password:", bg=self.bg)
+        password_label.grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        self.password_entry = tk.Entry(topRightFrame, show="*")
+        self.password_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+
+        role_label = tk.Label(topRightFrame, text="Role:", bg=self.bg)
+        role_label.grid(row=3, column=0, padx=10, pady=5, sticky="e")
+        self.role_var = tk.StringVar(value="admin")  # Default value for role
+        role_dropdown = tk.OptionMenu(topRightFrame, self.role_var, "admin", "W", "Ac")
+        role_dropdown.grid(row=3, column=1, padx=10, pady=5, sticky="w")
+
+        add_user_button = tk.Button(topRightFrame, text="Add User", command=self.add_user)
+        add_user_button.grid(row=4, column=0, columnspan=2, pady=20)
 
 
-class AdminFarme2(tk.Frame):
+        # bottom right Frame ## supplier frame
+        bottomRightFrame = tk.Frame(rightFrame, )
+        bottomRightFrame.grid(row=1, column=1, sticky="nsew", pady=40)
+        
+        title_label = tk.Label(bottomRightFrame, text="Add New supplier", font=('Arial', 20, 'bold'), bg=self.bg)
+        title_label.grid(row=0, column=0, columnspan=2, pady=20)
+        
+        suppliername_label = tk.Label(bottomRightFrame, text="supplier name:", bg=self.bg)
+        suppliername_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        self.suppliername_entry = tk.Entry(bottomRightFrame)
+        self.suppliername_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+        
+        contact_info_label = tk.Label(bottomRightFrame, text="supplier contact info:", bg=self.bg)
+        contact_info_label.grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        self.contact_info_entry = tk.Entry(bottomRightFrame, )
+        self.contact_info_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+        
+        add_supplier_button = tk.Button(bottomRightFrame, text="Add supplier", command=self.add_supplier)
+        add_supplier_button.grid(row=4, column=0, columnspan=2, pady=20)
+
+
+        # top Left Frame ## medicine frame
+        topleftFrame = tk.Frame(leftFrame, )
+        topleftFrame.grid(row=0, column=0, sticky="nsew")
+        
+        title_label = tk.Label(topleftFrame, text="Add New Medicine", font=('Arial', 20, 'bold'), bg=self.bg)
+        title_label.grid(row=0, column=0, columnspan=2, pady=20)
+
+        medicine_name_label = tk.Label(topleftFrame, text="medicine name:", bg=self.bg)
+        medicine_name_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        self.medicine_name_entry = tk.Entry(topleftFrame)
+        self.medicine_name_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+
+        description_label = tk.Label(topleftFrame, text="description:", bg=self.bg)
+        description_label.grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        self.description_entry = tk.Text(topleftFrame, height=20)
+        self.description_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+        
+        price_label = tk.Label(topleftFrame, text="price 'P':", bg=self.bg)
+        price_label.grid(row=3, column=0, padx=10, pady=5, sticky="e")
+        self.price_entry = tk.Entry(topleftFrame,)
+        self.price_entry.grid(row=3, column=1, padx=10, pady=5, sticky="w")
+        
+        self.supplier_var = tk.StringVar()
+        supplier_label = tk.Label(topleftFrame, text="supplier 'P':", bg=self.bg)
+        supplier_label.grid(row=4, column=0, padx=10, pady=5, sticky="e")
+        self.supplier_menu = ttk.Combobox(topleftFrame, textvariable=self.supplier_var)
+        self.supplier_menu.grid(row=4, column=1, padx=10, pady=5, sticky="w")
+        
+        self.supplier_menu.bind("<<ComboboxSelected>>", self.on_supplier_selected)
+        
+        add_medicine_button = tk.Button(topleftFrame, text="Add medicine", command=self.add_medicine)
+        add_medicine_button.grid(row=5, column=0, columnspan=2, pady=20)
+        
+        
+        
+        self.load_suppliers()
+        
+        
+    def add_user(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+        role = self.role_var.get()
+
+        if not username or not password or not role:
+            messagebox.showwarning("Input Error", "All fields must be filled!")
+            return
+
+        try:
+            self.parent.users.insert(username, password, role)
+            messagebox.showinfo("Success", f"User '{username}' added successfully!")
+            self.clear_user_form()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add user: {str(e)}")
+
+    def clear_user_form(self):
+        self.username_entry.delete(0, tk.END)
+        self.password_entry.delete(0, tk.END)
+        self.role_var.set("admin")
+
+    
+    def add_supplier(self):
+        suppliername = self.suppliername_entry.get()
+        contact_info = self.contact_info_entry.get()
+
+        if not suppliername or not contact_info :
+            messagebox.showwarning("Input Error", "All fields must be filled!")
+            return
+
+        try:
+            self.parent.supplier.insert(suppliername, contact_info)
+            messagebox.showinfo("Success", f"supplier '{suppliername}' added successfully!")
+            self.clear_supplier_form()
+            self.load_suppliers()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add supplier: {str(e)}")
+
+    def clear_supplier_form(self):
+        self.suppliername_entry.delete(0, tk.END)
+        self.contact_info_entry.delete(0, tk.END)
+
+
+    def load_suppliers(self):
+        suppliers = self.parent.supplier.select_id_name()
+        supplier_names = [name for _, name in suppliers]
+        self.supplier_menu['values'] = ["--choose one--"] + supplier_names
+        self.supplier_menu.current(0)
+        self.suppliers_dict = {name: supplier_id for supplier_id, name in suppliers}
+
+    def on_supplier_selected(self, event):
+        selected_name = self.supplier_var.get() if self.supplier_var.get() != "--choose one--" else None
+        self.supplier_id = self.suppliers_dict.get(selected_name)
+
+
+    def add_medicine(self):
+        medicine_name = self.medicine_name_entry.get()
+        description = self.description_entry.get("1.0", tk.END)
+        price = self.price_entry.get()
+        
+        
+        if not medicine_name or not self.supplier_id :
+            messagebox.showwarning("Input Error", "All fields must be filled!")
+            return
+        
+        try:
+            self.parent.medicine.insert(medicine_name, description, price, self.supplier_id)
+            messagebox.showinfo("Success", f"medicine '{medicine_name}' added successfully!")
+            self.clear_medicine_form()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add medicine: {str(e)}")
+        
+        
+
+    def clear_medicine_form(self):
+        self.medicine_name_entry.delete(0, tk.END)
+        self.description_entry.delete("1.0", tk.END)
+        self.price_entry.delete(0, tk.END)
+        self.supplier_id = None
+        self.supplier_menu.current(0)
+    
+
+
+class AdminFrame2(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="lightgray")
         label = tk.Label(self, text="This is admin Frame no. Two", font=("Arial", 16), bg="#11f3c9")
@@ -286,8 +467,11 @@ class App(tk.Tk):
         self.title("Elethat Company")
         self.state("zoomed")
         self.wm_minsize(800, 600)
+        
         self.db = Database()
         self.users = User(self.db)
+        self.supplier = Supplier(self.db)
+        self.medicine = Medicine(self.db)
         
         self.user_name = None
         self.user_role = None
@@ -307,8 +491,8 @@ class App(tk.Tk):
 
         self.switch_frame(MainFrame)
         
-        if not self.user_role:
-            self.destroy()
+        # if not self.user_role:
+        #     self.destroy()
 
     def set_user(self, username, role):
         self.user_role = role
@@ -330,8 +514,10 @@ class App(tk.Tk):
     def logout(self):
         self.set_user("", "") 
         self.destroy()  
-        self.__init__() 
-            
+        self.__init__()
+    
+
+
 
 if __name__ == "__main__":
     app = App()
