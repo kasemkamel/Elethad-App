@@ -47,7 +47,7 @@ class LoginWindow(tk.Toplevel):
         password = self.password_entry.get()
 
         role = self.get_user_role(username, password)
-
+    
         if role:
 
             self.parent.set_user(username, role)
