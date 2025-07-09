@@ -4,6 +4,7 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 from database import *
 
+
 # This is a simple GUI application for managing users, suppliers, and medicines in a company.
 class LoginWindow(tk.Toplevel):
     """A simple login window that prompts for username and password."""
