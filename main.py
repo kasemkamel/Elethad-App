@@ -4,7 +4,7 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 from database import *
 
-
+# This is a simple GUI application for managing users, suppliers, and medicines in a company.
 class LoginWindow(tk.Toplevel):
     """A simple login window that prompts for username and password."""
     def __init__(self, parent):
@@ -64,7 +64,7 @@ class LoginWindow(tk.Toplevel):
             return result[3]
         return None
 
-
+# This is a sidebar that contains buttons to switch between different frames.
 class Sidebar(tk.Frame):
     """A sidebar that contains buttons to switch between different frames."""
     def __init__(self, parent, role):
@@ -149,7 +149,7 @@ class Sidebar(tk.Frame):
     def show_admin_frame_2(self):
         self.master.switch_frame(AdminFrame2)
     
-
+# This is a header that contains the application title and buttons for toggling the sidebar and logging out.
 class Header(tk.Frame):
     def __init__(self, parent, toggle_callback, logout_callback):
         super().__init__(parent, bg="darkgray", height=50)
@@ -166,7 +166,7 @@ class Header(tk.Frame):
         self.toggle_button = tk.Button(self, text="==", command=toggle_callback)
         self.toggle_button.pack(side="right", padx=10, pady=10)
 
-
+# This is a resizable image frame that displays an image and resizes it when the frame is resized.
 class ResizableImageFrame(tk.Frame):
     def __init__(self, parent, image_path):
         super().__init__(parent)
@@ -193,7 +193,7 @@ class ResizableImageFrame(tk.Frame):
 
         self.canvas.config(width=new_width, height=new_height)
 
-
+# This is the main frame that contains the welcome message and the resizable image frames.
 class MainFrame(tk.Frame):
     def __init__(self, parent):
         self.bg = '#119CB4'
@@ -232,42 +232,42 @@ class MainFrame(tk.Frame):
 
         frame2.grid_rowconfigure(0, weight=1) 
         
-
+# This is a simple frame that displays a message.
 class Frame1(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="lightblue")
         label = tk.Label(self, text="This is Frame 1", font=("Arial", 16), bg="lightblue")
         label.pack(pady=20)
 
-
+# This is a simple frame that displays a message.
 class Frame2(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="lightgreen")
         label = tk.Label(self, text="This is Frame 2", font=("Arial", 16), bg="lightgreen")
         label.pack(pady=20)
 
-
+# This is a simple frame that displays a message.
 class Frame3(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="lightpink")
         label = tk.Label(self, text="This is Frame 3", font=("Arial", 16), bg="lightpink")
         label.pack(pady=20)
 
-
+# This is a simple frame that displays a message for warehouse workers.
 class Frame4(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="lightyellow")
         label = tk.Label(self, text="This is Frame 4 (Warehouse Worker)", font=("Arial", 16), bg="lightyellow")
         label.pack(pady=20)
 
-
+# This is a simple frame that displays a message for warehouse workers.
 class Frame5(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="lightgray")
         label = tk.Label(self, text="This is Frame 5 (Warehouse Worker)", font=("Arial", 16), bg="lightgray")
         label.pack(pady=20)
 
-
+# This is an admin frame that allows adding new users, suppliers, and medicines.
 class AdminFrame1(tk.Frame):
     def __init__(self, parent):
         self.bg = 'lightblue'
@@ -459,14 +459,14 @@ class AdminFrame1(tk.Frame):
         self.supplier_menu.current(0)
     
 
-
+# This is an admin frame that allows adding new users, suppliers, and medicines.
 class AdminFrame2(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="lightgray")
         label = tk.Label(self, text="This is admin Frame no. Two", font=("Arial", 16), bg="#11f3c9")
         label.pack(pady=20)
 
-
+# This is the main application class that initializes the GUI and manages the frames.
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -525,7 +525,7 @@ class App(tk.Tk):
     
 
 
-
+# This is the main entry point of the application.
 if __name__ == "__main__":
     app = App()
     app.mainloop()
