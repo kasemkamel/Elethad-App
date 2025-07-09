@@ -2,16 +2,16 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from PIL import Image, ImageTk
-import sqlite3
 from database import *
 
 
 class LoginWindow(tk.Toplevel):
-
+    """A simple login window that prompts for username and password."""
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
-        self.title("Login")
+        self.parent.withdraw()
+        self.title("Login") 
         self.geometry("300x150")
         self.grab_set()
         self.focus_force()
@@ -49,20 +49,24 @@ class LoginWindow(tk.Toplevel):
         role = self.get_user_role(username, password)
 
         if role:
+
             self.parent.set_user(username, role)
-            self.destroy()  
+            self.destroy()
+            self.parent.deiconify()
         else:
             messagebox.showerror("Error", "Invalid username or password!")
+
 
     def get_user_role(self, username, password):
         result = self.parent.users.select_by_credentials(username, password)
 
         if result:
-            return result[0]
+            return result[3]
         return None
 
 
 class Sidebar(tk.Frame):
+    """A sidebar that contains buttons to switch between different frames."""
     def __init__(self, parent, role):
         super().__init__(parent, width=1000, bg='lightgray')
         self.parent = parent
@@ -119,12 +123,15 @@ class Sidebar(tk.Frame):
 
 
     def show_main(self, event=None):
+        """Switch to the main frame."""
         self.master.switch_frame(MainFrame)
     
     def show_frame_1(self):
+        """Switch to Frame 1."""
         self.master.switch_frame(Frame1)
 
     def show_frame_2(self):
+        """Switch to Frame 2."""
         self.master.switch_frame(Frame2)
 
     def show_frame_3(self):
@@ -152,7 +159,7 @@ class Header(tk.Frame):
         self.logout_button = tk.Button(self, text="Logout", command=logout_callback)
         self.logout_button.pack(side="left", padx=10, pady=10)
 
-        self.app_title = tk.Label(self, text="- Elethat -", font=("Arial", 16), bg="darkgray", fg="white")
+        self.app_title = tk.Label(self, text="- Elethad -", font=("Arial", 16), bg="darkgray", fg="white")
         self.app_title.pack(side="left", expand=True, fill=None, anchor="center", padx=10, pady=10)
         self.app_title.bind('<Button 1>', self.parent.sidebar.show_main)
         
@@ -491,8 +498,8 @@ class App(tk.Tk):
 
         self.switch_frame(MainFrame)
         
-        # if not self.user_role:
-        #     self.destroy()
+        if not self.user_role:
+            self.destroy()
 
     def set_user(self, username, role):
         self.user_role = role

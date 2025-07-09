@@ -1,5 +1,5 @@
 import sqlite3
-
+from tkinter import messagebox
 
 # ('admin', 'W', 'Ac') = (admin , Warehouse worker, Accountant)
 
@@ -89,6 +89,7 @@ class User:
             INSERT INTO Users (username, password, role) VALUES (?, ?, ?)
             ''', (username, password, role))
         except sqlite3.IntegrityError as e:
+            messagebox.showerror("Error", f"Error inserting user: {e}")
         self.db.close_db(conn)
 
     def update(self, user_id, username=None, password=None, role=None):
@@ -114,6 +115,7 @@ class User:
             WHERE id = ?
             ''', parameters)
         else:
+            messagebox.showerror("Error", "No fields to update.")
         self.db.close_db(conn)
 
     def delete(self, user_id):
@@ -188,6 +190,7 @@ class Medicine:
             WHERE id = ?
             ''', parameters)
         else:
+            messagebox.showerror("Error", "No fields to update.")
         self.db.close_db(conn)
 
     def delete(self, medicine_id):
@@ -238,6 +241,7 @@ class Supplier:
             WHERE id = ?
             ''', parameters)
         else:
+            messagebox.showerror("Error", "No fields to update.")
         self.db.close_db(conn)
 
     def delete(self, supplier_id):
@@ -282,6 +286,7 @@ class Stock:
             
             conn.commit()
         except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Error inserting Stock: {e}")
         finally:
             self.db.close_db(conn)
 
@@ -324,7 +329,7 @@ class Stock:
 
             conn.commit() 
         else:
-        
+            messagebox.showerror("Error", "No fields to update.")
         self.db.close_db(conn)
 
     def delete(self, stock_id):
@@ -349,7 +354,7 @@ class Stock:
             
             conn.commit()  # Commit both operations
         else:
-        
+            messagebox.showerror("Error", "No fields to update.")
         self.db.close_db(conn)
 
 
@@ -416,6 +421,7 @@ class Transaction:
 # db = Database()
 # db.create_database()
 # user_manager = User(db)
+# print(user_manager.select_all())
 # # default
 # user_manager.insert('admin', 'admin', 'admin')
 # print(user_manager.select_all())
