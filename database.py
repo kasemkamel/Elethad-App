@@ -208,6 +208,13 @@ class Medicine:
         medicines = cursor.fetchall()
         self.db.close_db(conn)
         return medicines
+    
+    def select_id_name(self):
+        conn, cursor = self.db.connect_db()
+        cursor.execute("SELECT id, name FROM Medicines")
+        medicines = cursor.fetchall()
+        self.db.close_db(conn)
+        return medicines
 
 
 class Supplier:
@@ -244,11 +251,11 @@ class Supplier:
             messagebox.showerror("Error", "No fields to update.")
         self.db.close_db(conn)
 
-    def delete(self, supplier_id):
+    def delete(self, supplier_id_or_name):
         conn, cursor = self.db.connect_db()
         cursor.execute('''
-        DELETE FROM Suppliers WHERE id = ?
-        ''', (supplier_id,))
+        DELETE FROM Suppliers WHERE id = ? or name = ?
+        ''', (supplier_id_or_name,supplier_id_or_name))
         self.db.close_db(conn)
 
     def select_all(self):
@@ -268,11 +275,17 @@ class Supplier:
         return suppliers
         
         
-        
-class Stock:
+      
+class Stock: # This class manages the stock of medicines
+    """This class manages the stock of medicines in the database.
+    It allows inserting, updating, deleting, and selecting stock entries.
+    It also updates the Medicines table to reflect changes in stock.
+    """
+    # The Stock table is used to track the quantity of each medicine in stock.
     def __init__(self, db):
         self.db = db
 
+    # The Stock table has a foreign key relationship with the Medicines table.
     def insert(self, medicine_id, quantity):
         conn, cursor = self.db.connect_db()
         try:
@@ -290,7 +303,7 @@ class Stock:
         finally:
             self.db.close_db(conn)
 
-
+    # The update method allows updating the stock entry for a specific medicine.
     def update(self, stock_id, medicine_id=None, quantity=None):
         conn, cursor = self.db.connect_db()
     
@@ -332,6 +345,7 @@ class Stock:
             messagebox.showerror("Error", "No fields to update.")
         self.db.close_db(conn)
 
+    # The delete method allows deleting a stock entry and updates the Medicines table accordingly.
     def delete(self, stock_id):
         conn, cursor = self.db.connect_db()
 
@@ -357,7 +371,7 @@ class Stock:
             messagebox.showerror("Error", "No fields to update.")
         self.db.close_db(conn)
 
-
+    # The select_all method retrieves all stock entries from the Stock table.
     def select_all(self):
         conn, cursor = self.db.connect_db()
         cursor.execute('''
@@ -367,6 +381,7 @@ class Stock:
         self.db.close_db(conn)
         return stock_entries
 
+    # The select_by_medicine method retrieves stock entries for a specific medicine.    
     def select_by_medicine(self, medicine_id):
         conn, cursor = self.db.connect_db()
         cursor.execute('''

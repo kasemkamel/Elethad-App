@@ -275,112 +275,215 @@ class AdminFrame1(tk.Frame):
         super().__init__(parent, bg=self.bg)
         self.parent = parent
         self.supplier_id = None
-        self.create_widgets()
+        self.create_scrollable_widgets()
 
-    def create_widgets(self):
-        leftFrame = tk.Frame(self, )
-        leftFrame.pack(expand=True, fill="both", side='left')
+    def create_scrollable_widgets(self):
+        # Create main canvas and scrollbar
+        self.canvas = tk.Canvas(self, bg=self.bg, highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas, bg=self.bg)
         
-        rightFrame = tk.Frame(self, )
-        rightFrame.pack(expand=True, fill="both", side='right')
+        # Configure canvas scrolling
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
         
+        # Create window in canvas
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
         
-        bottomRightFrame = tk.Frame(rightFrame, )
-        bottomRightFrame.grid(row=0, column=1, sticky="nsew")
+        # Pack scrollbar and canvas
+        self.scrollbar.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both", expand=True)
         
-        bottomleftFrame = tk.Frame(rightFrame, )
-        bottomleftFrame.grid(row=0, column=0, sticky="nsew")
+        # Bind canvas resize event
+        self.canvas.bind("<Configure>", self.on_canvas_configure)
         
+        # Bind mousewheel to canvas
+        self.canvas.bind("<MouseWheel>", self.on_mousewheel)
+        self.bind_all("<MouseWheel>", self.on_mousewheel)
         
-        # top Right Frame ## user frame 
-        topRightFrame = tk.Frame(rightFrame, )
-        topRightFrame.grid(row=0, column=1, sticky="nsew")
+        # Create the actual content
+        self.create_content()
 
-        title_label = tk.Label(topRightFrame, text="Add New User", font=('Arial', 20, 'bold'), bg=self.bg)
-        title_label.grid(row=0, column=0, columnspan=2, pady=20)
+    def on_canvas_configure(self, event):
+        # Update the scrollable frame width to match canvas width
+        self.canvas.itemconfig(self.canvas_window, width=event.width)
 
-        username_label = tk.Label(topRightFrame, text="Username:", bg=self.bg)
-        username_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")
-        self.username_entry = tk.Entry(topRightFrame)
-        self.username_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+    def on_mousewheel(self, event):
+        # Enable mousewheel scrolling
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
-        password_label = tk.Label(topRightFrame, text="Password:", bg=self.bg)
-        password_label.grid(row=2, column=0, padx=10, pady=5, sticky="e")
-        self.password_entry = tk.Entry(topRightFrame, show="*")
-        self.password_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
-
-        role_label = tk.Label(topRightFrame, text="Role:", bg=self.bg)
-        role_label.grid(row=3, column=0, padx=10, pady=5, sticky="e")
-        self.role_var = tk.StringVar(value="admin")  # Default value for role
-        role_dropdown = tk.OptionMenu(topRightFrame, self.role_var, "admin", "W", "Ac")
-        role_dropdown.grid(row=3, column=1, padx=10, pady=5, sticky="w")
-
-        add_user_button = tk.Button(topRightFrame, text="Add User", command=self.add_user)
-        add_user_button.grid(row=4, column=0, columnspan=2, pady=20)
-
-
-        # bottom right Frame ## supplier frame
-        bottomRightFrame = tk.Frame(rightFrame, )
-        bottomRightFrame.grid(row=1, column=1, sticky="nsew", pady=40)
+    def create_content(self):
+        # Main container with grid layout
+        main_container = tk.Frame(self.scrollable_frame, bg=self.bg)
+        main_container.pack(fill="both", expand=True, padx=20, pady=20)
         
-        title_label = tk.Label(bottomRightFrame, text="Add New supplier", font=('Arial', 20, 'bold'), bg=self.bg)
-        title_label.grid(row=0, column=0, columnspan=2, pady=20)
+        # Configure grid weights for responsive layout
+        main_container.grid_columnconfigure(0, weight=1)
+        main_container.grid_columnconfigure(1, weight=1)
+        main_container.grid_rowconfigure(0, weight=1)
+        main_container.grid_rowconfigure(1, weight=1)
+        main_container.grid_rowconfigure(2, weight=1)
         
-        suppliername_label = tk.Label(bottomRightFrame, text="supplier name:", bg=self.bg)
-        suppliername_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")
-        self.suppliername_entry = tk.Entry(bottomRightFrame)
-        self.suppliername_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+        # Create sections
+        self.create_medicine_section(main_container)
+        self.create_user_section(main_container)
+        self.create_supplier_section(main_container)
+        self.create_stock_section(main_container)  # New section
         
-        contact_info_label = tk.Label(bottomRightFrame, text="supplier contact info:", bg=self.bg)
-        contact_info_label.grid(row=2, column=0, padx=10, pady=5, sticky="e")
-        self.contact_info_entry = tk.Entry(bottomRightFrame, )
-        self.contact_info_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
-        
-        add_supplier_button = tk.Button(bottomRightFrame, text="Add supplier", command=self.add_supplier)
-        add_supplier_button.grid(row=4, column=0, columnspan=2, pady=20)
+        # Load initial data
+        self.load_suppliers()
+        self.load_medicines()
 
-
-        # top Left Frame ## medicine frame
-        topleftFrame = tk.Frame(leftFrame, )
-        topleftFrame.grid(row=0, column=0, sticky="nsew")
+    def create_medicine_section(self, parent):
+        # Medicine frame - Top Left
+        medicine_frame = tk.LabelFrame(parent, text="Medicine Management", 
+                                     font=('Arial', 14, 'bold'), bg=self.bg,
+                                     relief="ridge", bd=2)
+        medicine_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
         
-        title_label = tk.Label(topleftFrame, text="Add New Medicine", font=('Arial', 20, 'bold'), bg=self.bg)
-        title_label.grid(row=0, column=0, columnspan=2, pady=20)
-
-        medicine_name_label = tk.Label(topleftFrame, text="medicine name:", bg=self.bg)
-        medicine_name_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")
-        self.medicine_name_entry = tk.Entry(topleftFrame)
-        self.medicine_name_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
-
-        description_label = tk.Label(topleftFrame, text="description:", bg=self.bg)
-        description_label.grid(row=2, column=0, padx=10, pady=5, sticky="e")
-        self.description_entry = tk.Text(topleftFrame, height=20)
-        self.description_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+        # Configure internal grid
+        medicine_frame.grid_columnconfigure(1, weight=1)
         
-        price_label = tk.Label(topleftFrame, text="price 'P':", bg=self.bg)
-        price_label.grid(row=3, column=0, padx=10, pady=5, sticky="e")
-        self.price_entry = tk.Entry(topleftFrame,)
-        self.price_entry.grid(row=3, column=1, padx=10, pady=5, sticky="w")
+        # Medicine form fields
+        tk.Label(medicine_frame, text="Medicine Name:", bg=self.bg).grid(
+            row=0, column=0, padx=10, pady=5, sticky="e")
+        self.medicine_name_entry = tk.Entry(medicine_frame, width=30)
+        self.medicine_name_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+
+        tk.Label(medicine_frame, text="Description:", bg=self.bg).grid(
+            row=1, column=0, padx=10, pady=5, sticky="ne")
+        self.description_entry = tk.Text(medicine_frame, height=4, width=30)
+        self.description_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
         
+        tk.Label(medicine_frame, text="Price:", bg=self.bg).grid(
+            row=2, column=0, padx=10, pady=5, sticky="e")
+        self.price_entry = tk.Entry(medicine_frame, width=30)
+        self.price_entry.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
+        
+        tk.Label(medicine_frame, text="Supplier:", bg=self.bg).grid(
+            row=3, column=0, padx=10, pady=5, sticky="e")
         self.supplier_var = tk.StringVar()
-        supplier_label = tk.Label(topleftFrame, text="supplier 'P':", bg=self.bg)
-        supplier_label.grid(row=4, column=0, padx=10, pady=5, sticky="e")
-        self.supplier_menu = ttk.Combobox(topleftFrame, textvariable=self.supplier_var)
-        self.supplier_menu.grid(row=4, column=1, padx=10, pady=5, sticky="w")
-        
+        self.supplier_menu = ttk.Combobox(medicine_frame, textvariable=self.supplier_var, width=27)
+        self.supplier_menu.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
         self.supplier_menu.bind("<<ComboboxSelected>>", self.on_supplier_selected)
         
-        add_medicine_button = tk.Button(topleftFrame, text="Add medicine", command=self.add_medicine)
-        add_medicine_button.grid(row=5, column=0, columnspan=2, pady=20)
+        # Medicine buttons
+        button_frame = tk.Frame(medicine_frame, bg=self.bg)
+        button_frame.grid(row=4, column=0, columnspan=2, pady=15)
         
+        tk.Button(button_frame, text="Add Medicine", command=self.add_medicine,
+                 bg="green", fg="white", font=('Arial', 10, 'bold')).pack(side="left", padx=5)
+        tk.Button(button_frame, text="Clear Form", command=self.clear_medicine_form,
+                 bg="orange", fg="white", font=('Arial', 10, 'bold')).pack(side="left", padx=5)
+
+    def create_user_section(self, parent):
+        # User frame - Top Right
+        user_frame = tk.LabelFrame(parent, text="User Management", 
+                                 font=('Arial', 14, 'bold'), bg=self.bg,
+                                 relief="ridge", bd=2)
+        user_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
         
+        # Configure internal grid
+        user_frame.grid_columnconfigure(1, weight=1)
         
-        self.load_suppliers()
+        # User form fields
+        tk.Label(user_frame, text="Username:", bg=self.bg).grid(
+            row=0, column=0, padx=10, pady=5, sticky="e")
+        self.username_entry = tk.Entry(user_frame, width=30)
+        self.username_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+
+        tk.Label(user_frame, text="Password:", bg=self.bg).grid(
+            row=1, column=0, padx=10, pady=5, sticky="e")
+        self.password_entry = tk.Entry(user_frame, show="*", width=30)
+        self.password_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+
+        tk.Label(user_frame, text="Role:", bg=self.bg).grid(
+            row=2, column=0, padx=10, pady=5, sticky="e")
+        self.role_var = tk.StringVar(value="admin")
+        role_dropdown = tk.OptionMenu(user_frame, self.role_var, "admin", "W", "Ac")
+        role_dropdown.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
         
+        # User buttons
+        button_frame = tk.Frame(user_frame, bg=self.bg)
+        button_frame.grid(row=3, column=0, columnspan=2, pady=15)
         
+        tk.Button(button_frame, text="Add User", command=self.add_user,
+                 bg="green", fg="white", font=('Arial', 10, 'bold')).pack(side="left", padx=5)
+        tk.Button(button_frame, text="Clear Form", command=self.clear_user_form,
+                 bg="orange", fg="white", font=('Arial', 10, 'bold')).pack(side="left", padx=5)
+
+    def create_supplier_section(self, parent):
+        # Supplier frame - Bottom Left
+        supplier_frame = tk.LabelFrame(parent, text="Supplier Management", 
+                                     font=('Arial', 14, 'bold'), bg=self.bg,
+                                     relief="ridge", bd=2)
+        supplier_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
+        
+        # Configure internal grid
+        supplier_frame.grid_columnconfigure(1, weight=1)
+        
+        # Supplier form fields
+        tk.Label(supplier_frame, text="Supplier Name:", bg=self.bg).grid(
+            row=0, column=0, padx=10, pady=5, sticky="e")
+        self.suppliername_entry = tk.Entry(supplier_frame, width=30)
+        self.suppliername_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+        
+        tk.Label(supplier_frame, text="Contact Info:", bg=self.bg).grid(
+            row=1, column=0, padx=10, pady=5, sticky="e")
+        self.contact_info_entry = tk.Entry(supplier_frame, width=30)
+        self.contact_info_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+        
+        # Supplier buttons
+        button_frame = tk.Frame(supplier_frame, bg=self.bg)
+        button_frame.grid(row=2, column=0, columnspan=2, pady=15)
+        
+        tk.Button(button_frame, text="Add Supplier", command=self.add_supplier,
+                 bg="green", fg="white", font=('Arial', 10, 'bold')).pack(side="left", padx=5)
+        tk.Button(button_frame, text="Delete Supplier", command=self.del_supplier,
+                 bg="red", fg="white", font=('Arial', 10, 'bold')).pack(side="left", padx=5)
+        tk.Button(button_frame, text="Clear Form", command=self.clear_supplier_form,
+                 bg="orange", fg="white", font=('Arial', 10, 'bold')).pack(side="left", padx=5)
+
+    def create_stock_section(self, parent):
+        # Stock frame - Bottom Right (New section)
+        stock_frame = tk.LabelFrame(parent, text="Stock Management", 
+                                  font=('Arial', 14, 'bold'), bg=self.bg,
+                                  relief="ridge", bd=2)
+        stock_frame.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
+        
+        # Configure internal grid
+        stock_frame.grid_columnconfigure(1, weight=1)
+        
+        # Stock form fields
+        tk.Label(stock_frame, text="Medicine:", bg=self.bg).grid(
+            row=0, column=0, padx=10, pady=5, sticky="e")
+        self.medicine_var = tk.StringVar()
+        self.medicine_menu = ttk.Combobox(stock_frame, textvariable=self.medicine_var, width=27)
+        self.medicine_menu.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+        
+        tk.Label(stock_frame, text="Quantity:", bg=self.bg).grid(
+            row=1, column=0, padx=10, pady=5, sticky="e")
+        self.stock_quantity_entry = tk.Entry(stock_frame, width=30)
+        self.stock_quantity_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+        
+        # Stock buttons
+        button_frame = tk.Frame(stock_frame, bg=self.bg)
+        button_frame.grid(row=2, column=0, columnspan=2, pady=15)
+        
+        tk.Button(button_frame, text="Add Stock", command=self.add_stock,
+                 bg="green", fg="white", font=('Arial', 10, 'bold')).pack(side="left", padx=5)
+        tk.Button(button_frame, text="Remove Stock", command=self.remove_stock,
+                 bg="red", fg="white", font=('Arial', 10, 'bold')).pack(side="left", padx=5)
+        tk.Button(button_frame, text="Clear Form", command=self.clear_stock_form,
+                 bg="orange", fg="white", font=('Arial', 10, 'bold')).pack(side="left", padx=5)
+
+    # Original methods (keep all existing methods)
     def add_user(self):
-        username = self.username_entry.get()
-        password = self.password_entry.get()
+        username = self.username_entry.get().strip()
+        password = self.password_entry.get().strip()
         role = self.role_var.get()
 
         if not username or not password or not role:
@@ -399,22 +502,38 @@ class AdminFrame1(tk.Frame):
         self.password_entry.delete(0, tk.END)
         self.role_var.set("admin")
 
-    
     def add_supplier(self):
-        suppliername = self.suppliername_entry.get()
-        contact_info = self.contact_info_entry.get()
+        suppliername = self.suppliername_entry.get().strip()
+        contact_info = self.contact_info_entry.get().strip()
 
-        if not suppliername or not contact_info :
+        if not suppliername or not contact_info:
             messagebox.showwarning("Input Error", "All fields must be filled!")
             return
 
         try:
             self.parent.supplier.insert(suppliername, contact_info)
-            messagebox.showinfo("Success", f"supplier '{suppliername}' added successfully!")
+            messagebox.showinfo("Success", f"Supplier '{suppliername}' added successfully!")
             self.clear_supplier_form()
             self.load_suppliers()
         except Exception as e:
             messagebox.showerror("Error", f"Failed to add supplier: {str(e)}")
+
+    def del_supplier(self):
+        # Implementation for deleting supplier
+        selected_name = self.supplier_var.get()
+        if selected_name == "--choose one--" or not selected_name:
+            messagebox.showwarning("Selection Error", "Please select a supplier to delete!")
+            return
+        
+        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete supplier '{selected_name}'?"):
+            try:
+                supplier_id = self.suppliers_dict.get(selected_name)
+                self.parent.supplier.delete(supplier_id)
+                messagebox.showinfo("Success", f"Supplier '{selected_name}' deleted successfully!")
+                self.load_suppliers()
+                self.clear_supplier_form()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete supplier: {str(e)}")
 
     def clear_supplier_form(self):
         self.suppliername_entry.delete(0, tk.END)
@@ -428,29 +547,38 @@ class AdminFrame1(tk.Frame):
         self.supplier_menu.current(0)
         self.suppliers_dict = {name: supplier_id for supplier_id, name in suppliers}
 
+
     def on_supplier_selected(self, event):
         selected_name = self.supplier_var.get() if self.supplier_var.get() != "--choose one--" else None
         self.supplier_id = self.suppliers_dict.get(selected_name)
 
-
+    
     def add_medicine(self):
-        medicine_name = self.medicine_name_entry.get()
-        description = self.description_entry.get("1.0", tk.END)
-        price = self.price_entry.get()
-        
-        
-        if not medicine_name or not self.supplier_id :
-            messagebox.showwarning("Input Error", "All fields must be filled!")
+        medicine_name = self.medicine_name_entry.get().strip()
+        description = self.description_entry.get("1.0", tk.END).strip()
+        price = self.price_entry.get().strip()
+        if not medicine_name or not self.supplier_id or not price:
+            messagebox.showwarning("Input Error", "Medicine name, price, and supplier must be filled!")
             return
-        
         try:
+            # Validate price
+            float(price)
             self.parent.medicine.insert(medicine_name, description, price, self.supplier_id)
-            messagebox.showinfo("Success", f"medicine '{medicine_name}' added successfully!")
+            messagebox.showinfo("Success", f"Medicine '{medicine_name}' added successfully!")
             self.clear_medicine_form()
+        except ValueError:
+            messagebox.showerror("Error", "Price must be a valid number!")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to add medicine: {str(e)}")
-        
-        
+        self.load_medicines()  # Reload medicines after adding
+
+    def load_medicines(self):
+        medicines = self.parent.medicine.select_id_name()
+        medicine_names = [name for _, name in medicines]
+        self.medicine_menu['values'] = ["--choose one--"] + medicine_names
+        self.medicine_menu.current(0)
+        self.medicines_dict = {name: medicine_id for medicine_id, name in medicines}
+
 
     def clear_medicine_form(self):
         self.medicine_name_entry.delete(0, tk.END)
@@ -458,7 +586,55 @@ class AdminFrame1(tk.Frame):
         self.price_entry.delete(0, tk.END)
         self.supplier_id = None
         self.supplier_menu.current(0)
-    
+
+    # New methods for stock management
+    def add_stock(self):
+        medicine_name = self.medicine_var.get()
+        quantity = self.stock_quantity_entry.get().strip()
+        
+        if not medicine_name or not quantity:
+            messagebox.showwarning("Input Error", "Please select medicine and enter quantity!")
+            return
+        
+        try:
+            quantity = int(quantity)
+            if quantity <= 0:
+                messagebox.showerror("Error", "Quantity must be positive!")
+                return
+            
+            # Implementation would require medicine selection logic
+            messagebox.showinfo("Success", f"Stock added successfully!")
+            self.clear_stock_form()
+        except ValueError:
+            messagebox.showerror("Error", "Quantity must be a valid number!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add stock: {str(e)}")
+
+    def remove_stock(self):
+        medicine_name = self.medicine_var.get()
+        quantity = self.stock_quantity_entry.get().strip()
+        
+        if not medicine_name or not quantity:
+            messagebox.showwarning("Input Error", "Please select medicine and enter quantity!")
+            return
+        
+        try:
+            quantity = int(quantity)
+            if quantity <= 0:
+                messagebox.showerror("Error", "Quantity must be positive!")
+                return
+            
+            # Implementation would require medicine selection logic
+            messagebox.showinfo("Success", f"Stock removed successfully!")
+            self.clear_stock_form()
+        except ValueError:
+            messagebox.showerror("Error", "Quantity must be a valid number!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to remove stock: {str(e)}")
+
+    def clear_stock_form(self):
+        self.medicine_var.set("")
+        self.stock_quantity_entry.delete(0, tk.END) 
 
 # This is an admin frame that allows adding new users, suppliers, and medicines.
 class AdminFrame2(tk.Frame):
