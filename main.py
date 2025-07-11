@@ -539,7 +539,6 @@ class AdminFrame1(tk.Frame):
         self.suppliername_entry.delete(0, tk.END)
         self.contact_info_entry.delete(0, tk.END)
 
-
     def load_suppliers(self):
         suppliers = self.parent.supplier.select_id_name()
         supplier_names = [name for _, name in suppliers]
@@ -547,11 +546,9 @@ class AdminFrame1(tk.Frame):
         self.supplier_menu.current(0)
         self.suppliers_dict = {name: supplier_id for supplier_id, name in suppliers}
 
-
     def on_supplier_selected(self, event):
         selected_name = self.supplier_var.get() if self.supplier_var.get() != "--choose one--" else None
         self.supplier_id = self.suppliers_dict.get(selected_name)
-
     
     def add_medicine(self):
         medicine_name = self.medicine_name_entry.get().strip()
@@ -578,7 +575,6 @@ class AdminFrame1(tk.Frame):
         self.medicine_menu['values'] = ["--choose one--"] + medicine_names
         self.medicine_menu.current(0)
         self.medicines_dict = {name: medicine_id for medicine_id, name in medicines}
-
 
     def clear_medicine_form(self):
         self.medicine_name_entry.delete(0, tk.END)
@@ -636,12 +632,14 @@ class AdminFrame1(tk.Frame):
         self.medicine_var.set("")
         self.stock_quantity_entry.delete(0, tk.END) 
 
+
 # This is an admin frame that allows adding new users, suppliers, and medicines.
 class AdminFrame2(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="lightgray")
         label = tk.Label(self, text="This is admin Frame no. Two", font=("Arial", 16), bg="#11f3c9")
         label.pack(pady=20)
+
 
 # This is the main application class that initializes the GUI and manages the frames.
 class App(tk.Tk):

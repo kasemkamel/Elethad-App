@@ -4,7 +4,7 @@ from tkinter import messagebox
 # ('admin', 'W', 'Ac') = (admin , Warehouse worker, Accountant)
 
 class Database:
-    def __init__(self, db_name='medicine_warehouse.db'):
+    def __init__(self, db_name='medicine_warehouse_old.db'):
         self.db_name = db_name
 
     def connect_db(self):
