@@ -1,9 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from tkcalendar import DateEntry
 from PIL import Image, ImageTk
 from database_new_Architecture import Database, User, Medicine, Supplier, Reports
-
+from datetime import date, datetime
 
 class LoginWindow(tk.Toplevel):
     """A simple login window that prompts for username and password."""
@@ -169,56 +170,56 @@ class Sidebar(tk.Frame):
 
         self.create_navigation_buttons()
 
-    def show_main(self, event=None):
-        self.master.switch_frame(MainFrame)
+    def show_Dashboard(self, event=None):
+        self.master.switch_frame(Dashboard)
 
-    def show_frame_1(self):
-        self.master.switch_frame(Frame1)
+    def show_Financial_Reports(self):
+        self.master.switch_frame(Financial_Reports)
 
-    def show_frame_2(self):
-        self.master.switch_frame(Frame2)
+    def show_Revenue_Analysis(self):
+        self.master.switch_frame(Revenue_Analysis)
 
-    def show_frame_3(self):
-        self.master.switch_frame(Frame3)
+    def show_Audit_Logs(self):
+        self.master.switch_frame(Audit_Logs)
 
-    def show_frame_4(self):
-        self.master.switch_frame(Frame4)
+    def show_Inventory_Management(self):
+        self.master.switch_frame(Inventory_Management)
 
     def show_frame_5(self):
-        self.master.switch_frame(Frame5)
+        self.master.switch_frame(Stock_Operations)
 
-    def show_admin_frame_1(self):
-        self.master.switch_frame(AdminFrame1)
+    def show_System_Management(self):
+        self.master.switch_frame(System_Management)
 
-    def show_admin_frame_2(self):
-        self.master.switch_frame(AdminFrame2)
+    def show_Analytics_and_Reports(self):
+        self.master.switch_frame(Analytics_and_Reports)
 
 
     def create_navigation_buttons(self):
         buttons = []
         
-        buttons.append(("🏠 Dashboard", self.show_main))
+        buttons.append(("🏠 Dashboard", self.show_Dashboard))
         
         if self.parent.user_role == "accountant":
             buttons.extend([
-                ("📊 Financial Reports", self.show_frame_1),
-                ("💰 Revenue Analysis", self.show_frame_2),
-                ("📋 Audit Logs", self.show_frame_3),
+                ("📊 Financial Reports", self.show_Financial_Reports),
+                ("💰 Revenue Analysis", self.show_Revenue_Analysis),
+                ("📋 Audit Logs", self.show_Audit_Logs),
             ])
         elif self.parent.user_role == "warehouse_worker":
             buttons.extend([
-                ("📦 Inventory Management", self.show_frame_4),
+                ("📦 Inventory Management", self.show_Inventory_Management),
                 ("🚚 Stock Operations", self.show_frame_5),
             ])
         elif self.parent.user_role == "admin":
             buttons.extend([
-                ("📊 Financial Reports", self.show_frame_1),
-                ("💰 Revenue Analysis", self.show_frame_2),
-                ("📋 Audit Logs", self.show_frame_3),
-                ("📦 Inventory Management", self.show_frame_4),
+                ("📊 Financial Reports", self.show_Financial_Reports),
+                ("💰 Revenue Analysis", self.show_Revenue_Analysis),
+                ("📋 Audit Logs", self.show_Audit_Logs),
+                ("📦 Inventory Management", self.show_Inventory_Management),
                 ("🚚 Stock Operations", self.show_frame_5),
-                ("⚙️ System Management", self.show_admin_frame_1),
-                ("📈 Analytics & Reports", self.show_admin_frame_2),
+                ("⚙️ System Management", self.show_System_Management),
+                ("📈 Analytics & Reports", self.show_Analytics_and_Reports),
             ])
 
         for text, command in buttons:
@@ -268,7 +269,7 @@ class Header(tk.Frame):
             fg="#ECF0F1"
         )
         self.app_title.pack(side="left", expand=True, padx=20, pady=15)
-        self.app_title.bind("<Button-1>", self.parent.sidebar.show_main)
+        self.app_title.bind("<Button-1>", self.parent.sidebar.show_Dashboard)
 
         self.logout_button = tk.Button(
             self, 
@@ -316,11 +317,11 @@ class ResizableImageFrame(tk.Frame):
             self.canvas.itemconfig(self.image_id, image=self.image)
             self.canvas.config(width=new_width, height=new_height)
 
-# not complete =>> الكروت الاربعة بس ان شاء الله بكرة
-class MainFrame(tk.Frame):
-    def __init__(self, parent):
+# not complete =>> 13/7/2025 الكروت الاربعة بس ان شاء الله بكرة
+class Dashboard(tk.Frame):
+    def __init__(self, box, parent):
         self.bg = "#ECF0F1"
-        super().__init__(parent, bg=self.bg)
+        super().__init__(box, bg=self.bg)
         self.create_widgets()
     def create_widgets(self):
         title_frame = tk.Frame(self, bg=self.bg, pady=30)
@@ -433,9 +434,9 @@ class MainFrame(tk.Frame):
         gallery_frame.grid_rowconfigure(0, weight=1)
 
 
-class Frame1(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg="#E8F6F3")
+class Financial_Reports(tk.Frame):
+    def __init__(self, box, parent):
+        super().__init__(box, bg="#E8F6F3")
         self.create_content("Financial Reports", "📊", "View and analyze financial data")
 
     def create_content(self, title, icon, description):
@@ -458,9 +459,9 @@ class Frame1(tk.Frame):
         desc_label.pack(pady=10)
 
 
-class Frame2(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg="#E8F8F5")
+class Revenue_Analysis(tk.Frame):
+    def __init__(self, box, parent):
+        super().__init__(box, bg="#E8F8F5")
         self.create_content("Revenue Analysis", "💰", "Track revenue trends and patterns")
 
     def create_content(self, title, icon, description):
@@ -483,9 +484,9 @@ class Frame2(tk.Frame):
         desc_label.pack(pady=10)
 
 
-class Frame3(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg="#FDF2E9")
+class Audit_Logs(tk.Frame):
+    def __init__(self, box, parent):
+        super().__init__(box, bg="#FDF2E9")
         self.create_content("Audit Logs", "📋", "Review system activities and changes")
 
     def create_content(self, title, icon, description):
@@ -508,9 +509,9 @@ class Frame3(tk.Frame):
         desc_label.pack(pady=10)
 
 
-class Frame4(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg="#EBF5FB")
+class Inventory_Management(tk.Frame):
+    def __init__(self, box, parent):
+        super().__init__(box, bg="#EBF5FB")
         self.create_content("Inventory Management", "📦", "Manage stock levels and inventory")
 
     def create_content(self, title, icon, description):
@@ -533,9 +534,9 @@ class Frame4(tk.Frame):
         desc_label.pack(pady=10)
 
 
-class Frame5(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg="#F4F6F6")
+class Stock_Operations(tk.Frame):
+    def __init__(self, box, parent):
+        super().__init__(box, bg="#F4F6F6")
         self.create_content("Stock Operations", "🚚", "Handle stock movements and transfers")
 
     def create_content(self, title, icon, description):
@@ -558,10 +559,10 @@ class Frame5(tk.Frame):
         desc_label.pack(pady=10)
 
 
-class AdminFrame1(tk.Frame):
-    def __init__(self, parent):
+class System_Management(tk.Frame):
+    def __init__(self, box, parent):
         self.bg = "#F8F9FA"
-        super().__init__(parent, bg=self.bg)
+        super().__init__(box, bg=self.bg)
         self.parent = parent
         self.supplier_id = None
         self.medicine_id = None
@@ -621,10 +622,15 @@ class AdminFrame1(tk.Frame):
         main_container.grid_rowconfigure(0, weight=1)
         main_container.grid_rowconfigure(1, weight=1)
 
+        # for example, if you want to add more sections later.
+        # main_container.grid_rowconfigure(2, weight=1)
+        # main_container.grid_rowconfigure(3, weight=1)
         self.create_medicine_section(main_container)
         self.create_user_section(main_container)
         self.create_supplier_section(main_container)
         self.create_stock_section(main_container)
+        # don't forget to add this ^^^ code if you want to add more sections.
+        # and create the respective methods for them mf.
 
         self.load_suppliers()
         self.load_medicines()
@@ -663,18 +669,71 @@ class AdminFrame1(tk.Frame):
         self.price_entry = tk.Entry(medicine_frame, width=30, font=("Arial", 10))
         self.price_entry.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
 
-        tk.Label(medicine_frame, text="Supplier:", bg=self.bg, fg="#2C3E50").grid(
+
+        # Batch Number
+        tk.Label(medicine_frame, text="Batch Number:", bg=self.bg, fg="#2C3E50").grid(
             row=3, column=0, padx=10, pady=5, sticky="e"
+        )
+        self.batch_number_entry = tk.Entry(medicine_frame, width=30, font=("Arial", 10))
+        self.batch_number_entry.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
+        
+
+        tk.Label(medicine_frame, text="Expiry Date:", bg=self.bg, fg="#2C3E50").grid(
+            row=4, column=0, padx=10, pady=5, sticky="e"
+        )
+
+        self.expiry_date_entry = DateEntry(
+            medicine_frame,
+            width=27,
+            background='white',             
+            foreground='black', 
+            borderwidth=1,
+            font=("Arial", 10),
+            date_pattern='dd/mm/yyyy',         
+            mindate=date.today(),  # Prevent past dates
+            maxdate=date.today().replace(year=date.today().year + 5),
+            takefocus=False,  # Add this line
+
+    )
+        self.expiry_date_entry.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
+
+        # Troubleshooting tips for DateEntry widget=> لسه بحاول بردو يعنى
+        dateentry_troubleshooting = {
+            "Year arrows not working": {
+                "causes": [
+                    "Poor color contrast (dark background)",
+                    "Missing year initialization", 
+                    "Date range restrictions",
+                    "Widget focus issues"
+                ],
+                "solutions": [
+                    "Use light background with dark text",
+                    "Set explicit year parameter",
+                    "Set mindate=None, maxdate=None",
+                    "Ensure widget is properly packed/gridded"
+                ]
+            },
+            "Calendar not opening": {
+                "causes": ["Widget size too small", "Parent widget issues"],
+                "solutions": ["Increase width", "Check parent widget configuration"]
+            },
+            "Date not updating": {
+                "causes": ["Event binding issues", "Variable synchronization"],
+                "solutions": ["Use get_date() method", "Bind to <<DateEntrySelected>>"]
+            }
+        }
+        tk.Label(medicine_frame, text="Supplier:", bg=self.bg, fg="#2C3E50").grid(
+            row=5, column=0, padx=10, pady=5, sticky="e"
         )
         self.supplier_var = tk.StringVar()
         self.supplier_menu = ttk.Combobox(
             medicine_frame, textvariable=self.supplier_var, width=27, font=("Arial", 10)
         )
-        self.supplier_menu.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
+        self.supplier_menu.grid(row=5, column=1, padx=10, pady=5, sticky="ew")
         self.supplier_menu.bind("<<ComboboxSelected>>", self.on_supplier_selected)
 
         button_frame = tk.Frame(medicine_frame, bg=self.bg)
-        button_frame.grid(row=4, column=0, columnspan=2, pady=15)
+        button_frame.grid(row=6, column=0, columnspan=2, pady=15)
 
         tk.Button(
             button_frame,
@@ -946,20 +1005,31 @@ class AdminFrame1(tk.Frame):
 
     def add_medicine(self):
         try:
-            name = self.medicine_name_entry.get().strip()
-            description = self.description_entry.get("1.0", tk.END).strip()
+            medicine_name = self.medicine_name_entry.get()
+            description = self.description_entry.get(1.0, tk.END).strip()
+            batch_number = self.batch_number_entry.get()
+            expiry_date = self.expiry_date_entry.get_date() 
+
+            supplier = self.supplier_var.get()
             price = float(self.price_entry.get())
             
-            if not name or not description or price <= 0:
-                messagebox.showerror("Error", "Please fill all fields with valid data")
+            if not all([medicine_name, description, price, batch_number, expiry_date, supplier]):
+                tk.messagebox.showerror("Error", "Please fill in all fields")
                 return
             
-            medicine_id = self.parent.medicine_manager.add_medicine(
-                name, description, price, self.supplier_id
-            )
+            medicine_data = {
+                'name': medicine_name,
+                'description': description,
+                'price': float(price),
+                'batch_number': batch_number,
+                'expiry_date': expiry_date,
+                'supplier': supplier
+            }
+
+            medicine_id = self.parent.medicine_manager.add_medicine(medicine_data)
             
             if medicine_id:
-                messagebox.showinfo("Success", f"Medicine '{name}' added successfully!")
+                messagebox.showinfo("Success", f"Medicine '{medicine_name}' added successfully!")
                 self.clear_medicine_form()
                 self.load_medicines()
             
@@ -1045,6 +1115,8 @@ class AdminFrame1(tk.Frame):
         self.medicine_name_entry.delete(0, tk.END)
         self.description_entry.delete("1.0", tk.END)
         self.price_entry.delete(0, tk.END)
+        self.batch_number_entry.delete(0, tk.END)
+        # self.expiry_date_entry.set_date(date.today())
         self.supplier_var.set("")
         self.supplier_id = None
 
@@ -1069,9 +1141,9 @@ class AdminFrame1(tk.Frame):
         self.medicine_id = None
 
 
-class AdminFrame2(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg="#F8F9FA")
+class Analytics_and_Reports(tk.Frame):
+    def __init__(self, box, parent):
+        super().__init__(box, bg="#F8F9FA")
         self.parent = parent
         self.create_content()
 
@@ -1167,7 +1239,7 @@ class AdminFrame2(tk.Frame):
             font=("Arial", 11, "bold"),
             relief="flat",
             cursor="hand2"
-        ).pack(pady=10)
+        ).pack(side="left", pady=10)
 
         self.financial_text = tk.Text(summary_frame, height=20, width=80, font=("Arial", 10))
         self.financial_text.pack(fill="both", expand=True)
@@ -1262,7 +1334,7 @@ class MedicineWarehouseApp(tk.Tk):
         self.user_id = None
         
         self.title("Medicine Warehouse Management System")
-        self.geometry("1200x800")
+        self.geometry("1200x700")
         self.configure(bg="#ECF0F1")
         self.state('zoomed')  
         
@@ -1297,7 +1369,7 @@ class MedicineWarehouseApp(tk.Tk):
         self.main_content = tk.Frame(self.main_container, bg="#ECF0F1")
         self.main_content.pack(side="right", fill="both", expand=True)
         
-        self.switch_frame(MainFrame)
+        self.switch_frame(Dashboard)
 
     def toggle_sidebar(self):
         """Toggle sidebar visibility"""
@@ -1311,7 +1383,7 @@ class MedicineWarehouseApp(tk.Tk):
         if self.current_frame:
             self.current_frame.destroy()
         
-        self.current_frame = frame_class(self.main_content)
+        self.current_frame = frame_class(self.main_content,self)
         self.current_frame.pack(fill="both", expand=True)
 
     def logout(self):
@@ -1324,7 +1396,10 @@ class MedicineWarehouseApp(tk.Tk):
             self.header.destroy()
         if hasattr(self, 'main_container'):
             self.main_container.destroy()
-        
+        if hasattr(self, 'sidebar'):
+            self.sidebar.destroy()
+        if hasattr(self, 'current_frame'):
+            self.current_frame.destroy()
         self.show_login()
 
 
