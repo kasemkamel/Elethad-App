@@ -1351,6 +1351,7 @@ class MedicineWarehouseApp(tk.Tk):
         login_window = LoginWindow(self)
         self.wait_window(login_window)
 
+
     def set_user(self, username, role, user_id):
         """Set user session after successful login"""
         self.user_name = username
