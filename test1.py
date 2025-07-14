@@ -42,6 +42,18 @@ def create_medicine_section(self, parent):
     self.batch_number_entry = tk.Entry(medicine_frame, width=30, font=("Arial", 10))
     self.batch_number_entry.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
     
+
+
+
+
+
+
+
+
+
+
+
+    
     # Expiry Date with Spinboxes
     tk.Label(medicine_frame, text="Expiry Date:", bg=self.bg, fg="#2C3E50").grid(
         row=4, column=0, padx=10, pady=5, sticky="e"
@@ -116,6 +128,22 @@ def create_medicine_section(self, parent):
     self.day_spinbox.bind('<KeyRelease>', self.on_date_change)
     self.month_spinbox.bind('<KeyRelease>', self.on_date_change)
     self.year_spinbox.bind('<KeyRelease>', self.on_date_change)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     tk.Label(medicine_frame, text="Supplier:", bg=self.bg, fg="#2C3E50").grid(
         row=5, column=0, padx=10, pady=5, sticky="e"

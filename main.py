@@ -5,6 +5,7 @@ from tkcalendar import DateEntry
 from PIL import Image, ImageTk
 from database_new_Architecture import Database, User, Medicine, Supplier, Reports
 from datetime import date, datetime
+import calendar
 
 class LoginWindow(tk.Toplevel):
     """A simple login window that prompts for username and password."""
@@ -137,7 +138,6 @@ class LoginWindow(tk.Toplevel):
 
 class Sidebar(tk.Frame):
     """A sidebar that contains buttons to switch between different frames."""
-
     def __init__(self, parent):
         super().__init__(parent, width=250, bg="#34495E")
         self.parent = parent
@@ -194,7 +194,6 @@ class Sidebar(tk.Frame):
     def show_Analytics_and_Reports(self):
         self.master.switch_frame(Analytics_and_Reports)
 
-
     def create_navigation_buttons(self):
         buttons = []
         
@@ -239,6 +238,7 @@ class Sidebar(tk.Frame):
 
 
 class Header(tk.Frame):
+    """ """
     def __init__(self, parent, toggle_callback, logout_callback):
         super().__init__(parent, bg="#2C3E50", height=60)
         self.parent = parent
@@ -287,6 +287,7 @@ class Header(tk.Frame):
 
 
 class ResizableImageFrame(tk.Frame):
+    """ """
     def __init__(self, parent, image_path):
         super().__init__(parent)
         self.pack_propagate(False)
@@ -319,10 +320,12 @@ class ResizableImageFrame(tk.Frame):
 
 # not complete =>> 13/7/2025 الكروت الاربعة بس ان شاء الله بكرة
 class Dashboard(tk.Frame):
+    """ """
     def __init__(self, box, parent):
         self.bg = "#ECF0F1"
         super().__init__(box, bg=self.bg)
         self.create_widgets()
+
     def create_widgets(self):
         title_frame = tk.Frame(self, bg=self.bg, pady=30)
         title_frame.pack(fill="x")
@@ -435,6 +438,7 @@ class Dashboard(tk.Frame):
 
 
 class Financial_Reports(tk.Frame):
+    """ """
     def __init__(self, box, parent):
         super().__init__(box, bg="#E8F6F3")
         self.create_content("Financial Reports", "📊", "View and analyze financial data")
@@ -460,6 +464,7 @@ class Financial_Reports(tk.Frame):
 
 
 class Revenue_Analysis(tk.Frame):
+    """ """
     def __init__(self, box, parent):
         super().__init__(box, bg="#E8F8F5")
         self.create_content("Revenue Analysis", "💰", "Track revenue trends and patterns")
@@ -485,6 +490,7 @@ class Revenue_Analysis(tk.Frame):
 
 
 class Audit_Logs(tk.Frame):
+    """ """
     def __init__(self, box, parent):
         super().__init__(box, bg="#FDF2E9")
         self.create_content("Audit Logs", "📋", "Review system activities and changes")
@@ -510,6 +516,7 @@ class Audit_Logs(tk.Frame):
 
 
 class Inventory_Management(tk.Frame):
+    """ """
     def __init__(self, box, parent):
         super().__init__(box, bg="#EBF5FB")
         self.create_content("Inventory Management", "📦", "Manage stock levels and inventory")
@@ -535,6 +542,7 @@ class Inventory_Management(tk.Frame):
 
 
 class Stock_Operations(tk.Frame):
+    """ """
     def __init__(self, box, parent):
         super().__init__(box, bg="#F4F6F6")
         self.create_content("Stock Operations", "🚚", "Handle stock movements and transfers")
@@ -560,6 +568,7 @@ class Stock_Operations(tk.Frame):
 
 
 class System_Management(tk.Frame):
+    """ """
     def __init__(self, box, parent):
         self.bg = "#F8F9FA"
         super().__init__(box, bg=self.bg)
@@ -647,27 +656,28 @@ class System_Management(tk.Frame):
         )
         medicine_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
-
         medicine_frame.grid_columnconfigure(1, weight=1)
-
 
         tk.Label(medicine_frame, text="Medicine Name:", bg=self.bg, fg="#2C3E50").grid(
             row=0, column=0, padx=10, pady=5, sticky="e"
         )
         self.medicine_name_entry = tk.Entry(medicine_frame, width=30, font=("Arial", 10))
         self.medicine_name_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+        self.medicine_name_entry.bind("<Return>", self.focus_on_next_widget)
 
         tk.Label(medicine_frame, text="Description:", bg=self.bg, fg="#2C3E50").grid(
             row=1, column=0, padx=10, pady=5, sticky="ne"
         )
         self.description_entry = tk.Text(medicine_frame, height=4, width=30, font=("Arial", 10))
         self.description_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+        self.description_entry.bind("<Return>", self.focus_on_next_widget)
 
         tk.Label(medicine_frame, text="Price:", bg=self.bg, fg="#2C3E50").grid(
             row=2, column=0, padx=10, pady=5, sticky="e"
         )
         self.price_entry = tk.Entry(medicine_frame, width=30, font=("Arial", 10))
         self.price_entry.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
+        self.price_entry.bind("<Return>", self.focus_on_next_widget)
 
 
         # Batch Number
@@ -676,52 +686,86 @@ class System_Management(tk.Frame):
         )
         self.batch_number_entry = tk.Entry(medicine_frame, width=30, font=("Arial", 10))
         self.batch_number_entry.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
+        self.batch_number_entry.bind("<Return>", self.focus_on_next_widget)
         
 
         tk.Label(medicine_frame, text="Expiry Date:", bg=self.bg, fg="#2C3E50").grid(
             row=4, column=0, padx=10, pady=5, sticky="e"
         )
 
-        self.expiry_date_entry = DateEntry(
-            medicine_frame,
-            width=27,
-            background='white',             
-            foreground='black', 
-            borderwidth=1,
+        date_frame = tk.Frame(medicine_frame, bg=self.bg)
+        date_frame.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
+
+        current_date = date.today()
+        
+        tk.Label(date_frame, text="Day:", bg=self.bg, fg="#2C3E50", font=("Arial", 9)).grid(
+            row=0, column=0, padx=(0, 5), sticky="w"
+        )
+        self.day_var = tk.IntVar(value=current_date.day)
+        self.day_spinbox = tk.Spinbox(
+            date_frame,
+            from_=1,
+            to=31,
+            width=5,
             font=("Arial", 10),
-            date_pattern='dd/mm/yyyy',         
-            mindate=date.today(),  # Prevent past dates
-            maxdate=date.today().replace(year=date.today().year + 5),
-            takefocus=False,  # Add this line
+            textvariable=self.day_var,
+            command=self.validate_date,
+            wrap=True
+        )
+        self.day_spinbox.grid(row=0, column=1, padx=(0, 10))
+        self.day_spinbox.bind("<Return>", self.focus_on_next_widget)
 
-    )
-        self.expiry_date_entry.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
+        # Month Spinbox
+        tk.Label(date_frame, text="Month:", bg=self.bg, fg="#2C3E50", font=("Arial", 9)).grid(
+            row=0, column=2, padx=(0, 5), sticky="w"
+        )
+        self.month_var = tk.IntVar(value=current_date.month)
+        self.month_spinbox = tk.Spinbox(
+            date_frame,
+            from_=1,
+            to=12,
+            width=5,
+            font=("Arial", 10),
+            textvariable=self.month_var,
+            command=self.validate_date,
+            wrap=True
+        )
+        self.month_spinbox.grid(row=0, column=3, padx=(0, 10))
+        self.month_spinbox.bind("<Return>", self.focus_on_next_widget)
 
-        # Troubleshooting tips for DateEntry widget=> لسه بحاول بردو يعنى
-        dateentry_troubleshooting = {
-            "Year arrows not working": {
-                "causes": [
-                    "Poor color contrast (dark background)",
-                    "Missing year initialization", 
-                    "Date range restrictions",
-                    "Widget focus issues"
-                ],
-                "solutions": [
-                    "Use light background with dark text",
-                    "Set explicit year parameter",
-                    "Set mindate=None, maxdate=None",
-                    "Ensure widget is properly packed/gridded"
-                ]
-            },
-            "Calendar not opening": {
-                "causes": ["Widget size too small", "Parent widget issues"],
-                "solutions": ["Increase width", "Check parent widget configuration"]
-            },
-            "Date not updating": {
-                "causes": ["Event binding issues", "Variable synchronization"],
-                "solutions": ["Use get_date() method", "Bind to <<DateEntrySelected>>"]
-            }
-        }
+        # Year Spinbox
+        tk.Label(date_frame, text="Year:", bg=self.bg, fg="#2C3E50", font=("Arial", 9)).grid(
+            row=0, column=4, padx=(0, 5), sticky="w"
+        )
+        self.year_var = tk.IntVar(value=current_date.year)
+        self.year_spinbox = tk.Spinbox(
+            date_frame,
+            from_=current_date.year,
+            to=current_date.year + 20,
+            width=8,
+            font=("Arial", 10),
+            textvariable=self.year_var,
+            command=self.validate_date,
+            wrap=False
+        )
+        self.year_spinbox.grid(row=0, column=5, padx=(0, 10))
+        self.year_spinbox.bind("<Return>", self.focus_on_next_widget)
+
+        # Date display label (shows formatted date)
+        self.date_display = tk.Label(
+            date_frame,
+            text=current_date.strftime("%d/%m/%Y"),
+            bg=self.bg,
+            fg="#27AE60",
+            font=("Arial", 10, "bold")
+        )
+        self.date_display.grid(row=0, column=6, padx=(10, 0))
+
+        # Bind events to validate date when values change
+        self.day_spinbox.bind('<KeyRelease>', self.on_date_change)
+        self.month_spinbox.bind('<KeyRelease>', self.on_date_change)
+        self.year_spinbox.bind('<KeyRelease>', self.on_date_change)
+
         tk.Label(medicine_frame, text="Supplier:", bg=self.bg, fg="#2C3E50").grid(
             row=5, column=0, padx=10, pady=5, sticky="e"
         )
@@ -776,12 +820,14 @@ class System_Management(tk.Frame):
         )
         self.username_entry = tk.Entry(user_frame, width=30, font=("Arial", 10))
         self.username_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+        self.username_entry.bind("<Return>", self.focus_on_next_widget)
 
         tk.Label(user_frame, text="Password:", bg=self.bg, fg="#2C3E50").grid(
             row=1, column=0, padx=10, pady=5, sticky="e"
         )
         self.password_entry = tk.Entry(user_frame, show="*", width=30, font=("Arial", 10))
         self.password_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+        self.password_entry.bind("<Return>", self.focus_on_next_widget)
 
         tk.Label(user_frame, text="Role:", bg=self.bg, fg="#2C3E50").grid(
             row=2, column=0, padx=10, pady=5, sticky="e"
@@ -796,17 +842,19 @@ class System_Management(tk.Frame):
             font=("Arial", 10)
         )
         role_dropdown.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
-
+        
         tk.Label(user_frame, text="Full Name:", bg=self.bg, fg="#2C3E50").grid(
             row=3, column=0, padx=10, pady=5, sticky="e"
         )
         self.full_name_entry = tk.Entry(user_frame, width=30, font=("Arial", 10))
         self.full_name_entry.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
+        self.full_name_entry.bind("<Return>", self.focus_on_next_widget)
         tk.Label(user_frame, text="Email:", bg=self.bg, fg="#2C3E50").grid(
             row=4, column=0, padx=10, pady=5, sticky="e"
         )
         self.email_entry = tk.Entry(user_frame, width=30, font=("Arial", 10))
         self.email_entry.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
+        self.email_entry.bind("<Return>", self.focus_on_next_widget)
 
         user_button_frame = tk.Frame(user_frame, bg=self.bg)
         user_button_frame.grid(row=5, column=0, columnspan=2, pady=15)
@@ -852,24 +900,28 @@ class System_Management(tk.Frame):
         )
         self.supplier_name_entry = tk.Entry(supplier_frame, width=30, font=("Arial", 10))
         self.supplier_name_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+        self.supplier_name_entry.bind("<Return>", self.focus_on_next_widget)
 
         tk.Label(supplier_frame, text="Email:", bg=self.bg, fg="#2C3E50").grid(
             row=1, column=0, padx=10, pady=5, sticky="e"
         )
         self.supplier_email_entry = tk.Entry(supplier_frame, width=30, font=("Arial", 10))
         self.supplier_email_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+        self.supplier_email_entry.bind("<Return>", self.focus_on_next_widget)
 
         tk.Label(supplier_frame, text="Phone:", bg=self.bg, fg="#2C3E50").grid(
             row=2, column=0, padx=10, pady=5, sticky="e"
         )
         self.supplier_phone_entry = tk.Entry(supplier_frame, width=30, font=("Arial", 10))
         self.supplier_phone_entry.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
+        self.supplier_phone_entry.bind("<Return>", self.focus_on_next_widget)
 
         tk.Label(supplier_frame, text="Address:", bg=self.bg, fg="#2C3E50").grid(
             row=3, column=0, padx=10, pady=5, sticky="ne"
         )
         self.supplier_address_entry = tk.Text(supplier_frame, height=3, width=30, font=("Arial", 10))
         self.supplier_address_entry.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
+        self.supplier_address_entry.bind("<Return>", self.focus_on_next_widget)
 
         supplier_button_frame = tk.Frame(supplier_frame, bg=self.bg)
         supplier_button_frame.grid(row=4, column=0, columnspan=2, pady=15)
@@ -919,12 +971,12 @@ class System_Management(tk.Frame):
         )
         self.medicine_menu.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
         self.medicine_menu.bind("<<ComboboxSelected>>", self.on_medicine_selected)
-
         tk.Label(stock_frame, text="Quantity:", bg=self.bg, fg="#2C3E50").grid(
             row=1, column=0, padx=10, pady=5, sticky="e"
         )
         self.quantity_entry = tk.Entry(stock_frame, width=30, font=("Arial", 10))
         self.quantity_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+        self.quantity_entry.bind("<Return>", self.focus_on_next_widget)
 
         tk.Label(stock_frame, text="Operation:", bg=self.bg, fg="#2C3E50").grid(
             row=2, column=0, padx=10, pady=5, sticky="e"
@@ -939,12 +991,14 @@ class System_Management(tk.Frame):
             font=("Arial", 10)
         )
         operation_dropdown.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
+        operation_dropdown.bind("<Return>", self.focus_on_next_widget)
 
         tk.Label(stock_frame, text="Reason:", bg=self.bg, fg="#2C3E50").grid(
             row=3, column=0, padx=10, pady=5, sticky="ne"
         )
         self.reason_entry = tk.Text(stock_frame, height=3, width=30, font=("Arial", 10))
         self.reason_entry.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
+        self.reason_entry.bind("<Return>", self.focus_on_next_widget)
 
         stock_button_frame = tk.Frame(stock_frame, bg=self.bg)
         stock_button_frame.grid(row=4, column=0, columnspan=2, pady=15)
@@ -992,6 +1046,7 @@ class System_Management(tk.Frame):
         if selected:
             try:
                 self.supplier_id = int(selected.split("ID: ")[1].split(")")[0])
+                self.supplier_menu.bind("<Return>", self.focus_on_next_widget)
             except:
                 self.supplier_id = None
 
@@ -1000,6 +1055,7 @@ class System_Management(tk.Frame):
         if selected:
             try:
                 self.medicine_id = int(selected.split("ID: ")[1].split(")")[0])
+                self.medicine_menu.bind("<Return>", self.focus_on_next_widget)
             except:
                 self.medicine_id = None
 
@@ -1008,7 +1064,7 @@ class System_Management(tk.Frame):
             medicine_name = self.medicine_name_entry.get()
             description = self.description_entry.get(1.0, tk.END).strip()
             batch_number = self.batch_number_entry.get()
-            expiry_date = self.expiry_date_entry.get_date() 
+            expiry_date = self.get_expiry_date()
 
             supplier = self.supplier_var.get()
             price = float(self.price_entry.get())
@@ -1016,17 +1072,15 @@ class System_Management(tk.Frame):
             if not all([medicine_name, description, price, batch_number, expiry_date, supplier]):
                 tk.messagebox.showerror("Error", "Please fill in all fields")
                 return
-            
             medicine_data = {
                 'name': medicine_name,
                 'description': description,
                 'price': float(price),
                 'batch_number': batch_number,
                 'expiry_date': expiry_date,
-                'supplier': supplier
+                'supplier_id': supplier
             }
-
-            medicine_id = self.parent.medicine_manager.add_medicine(medicine_data)
+            medicine_id = self.parent.medicine_manager.add_medicine(**medicine_data)
             
             if medicine_id:
                 messagebox.showinfo("Success", f"Medicine '{medicine_name}' added successfully!")
@@ -1116,7 +1170,8 @@ class System_Management(tk.Frame):
         self.description_entry.delete("1.0", tk.END)
         self.price_entry.delete(0, tk.END)
         self.batch_number_entry.delete(0, tk.END)
-        # self.expiry_date_entry.set_date(date.today())
+        current_date = date.today()
+        self.set_expiry_date(current_date)
         self.supplier_var.set("")
         self.supplier_id = None
 
@@ -1140,8 +1195,69 @@ class System_Management(tk.Frame):
         self.reason_entry.delete("1.0", tk.END)
         self.medicine_id = None
 
+    def validate_date(self):
+        """Validate the date and update display"""
+        try:
+            day = int(self.day_var.get())
+            month = int(self.month_var.get())
+            year = int(self.year_var.get())
+            # Check if date is valid
+            selected_date = datetime(year, month, day).date()
+            
+            # Update display
+            self.date_display.config(
+                text=selected_date.strftime("%d/%m/%Y"),
+                fg="#27AE60"
+            )
+            
+            # Adjust day if invalid for selected month
+            max_day = calendar.monthrange(year, month)[1]
+            self.day_spinbox.config(to=max_day)
+            if day > max_day:
+                self.day_var.set(max_day)
+                
+        except ValueError:
+            self.date_display.config(text="Invalid Date", fg="#E74C3C")
+
+    def on_date_change(self, event=None):
+        """Handle date change events"""
+        self.validate_date()
+
+    def set_expiry_date(self, date_obj):
+        """Set the expiry date from a date object"""
+        if date_obj:
+            self.day_spinbox.delete(0, tk.END)
+            self.day_spinbox.insert(0, str(date_obj.day))
+            
+            self.month_spinbox.delete(0, tk.END)
+            self.month_spinbox.insert(0, str(date_obj.month))
+            
+            self.year_spinbox.delete(0, tk.END)
+            self.year_spinbox.insert(0, str(date_obj.year))
+            
+            self.validate_date()
+
+    def get_expiry_date(self):
+        """Get the selected expiry date"""
+        try:
+            day = int(self.day_var.get())
+            month = int(self.month_var.get())
+            year = int(self.year_var.get())
+            return datetime(year, month, day).date()
+        except ValueError:
+            return None
+
+    def focus_on_next_widget(self, event):
+        next_widget = event.widget.tk_focusNext()
+        next_widget.focus()
+
+        if isinstance(next_widget, tk.Spinbox):
+            next_widget.icursor(tk.END)
+        return
+
 
 class Analytics_and_Reports(tk.Frame):
+    """ """
     def __init__(self, box, parent):
         super().__init__(box, bg="#F8F9FA")
         self.parent = parent
@@ -1317,6 +1433,7 @@ class Analytics_and_Reports(tk.Frame):
 
 
 class MedicineWarehouseApp(tk.Tk):
+    """ """
     def __init__(self):
         super().__init__()
         
@@ -1407,3 +1524,4 @@ class MedicineWarehouseApp(tk.Tk):
 if __name__ == "__main__":
     app = MedicineWarehouseApp()
     app.mainloop()
+    
