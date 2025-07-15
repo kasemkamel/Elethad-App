@@ -56,6 +56,7 @@ def create_medicine_section(self, parent):
         background='darkblue',
         foreground='white',
         borderwidth=2,
+        
         font=("Arial", 10),
         date_pattern='yyyy-mm-dd'  # or 'dd/mm/yyyy' or 'mm/dd/yyyy'
     )

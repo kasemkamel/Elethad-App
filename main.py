@@ -692,79 +692,22 @@ class System_Management(tk.Frame):
         tk.Label(medicine_frame, text="Expiry Date:", bg=self.bg, fg="#2C3E50").grid(
             row=4, column=0, padx=10, pady=5, sticky="e"
         )
-
-        date_frame = tk.Frame(medicine_frame, bg=self.bg)
-        date_frame.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
-
         current_date = date.today()
-        
-        tk.Label(date_frame, text="Day:", bg=self.bg, fg="#2C3E50", font=("Arial", 9)).grid(
-            row=0, column=0, padx=(0, 5), sticky="w"
-        )
-        self.day_var = tk.IntVar(value=current_date.day)
-        self.day_spinbox = tk.Spinbox(
-            date_frame,
-            from_=1,
-            to=31,
-            width=5,
+        self.datevar = tk.StringVar(value=current_date)
+
+        self.expiry_date_entry = DateEntry(
+            medicine_frame,
+            width=27,
+            background='white',             
+            foreground='black', 
+            borderwidth=1,
             font=("Arial", 10),
-            textvariable=self.day_var,
-            command=self.validate_date,
-            wrap=True
+            date_pattern='dd/mm/yyyy',         
+            mindate=date.today(),  # Prevent past dates
+            maxdate=date.today().replace(year=date.today().year + 5),
+            takefocus=False,
         )
-        self.day_spinbox.grid(row=0, column=1, padx=(0, 10))
-        self.day_spinbox.bind("<Return>", self.focus_on_next_widget)
-
-        # Month Spinbox
-        tk.Label(date_frame, text="Month:", bg=self.bg, fg="#2C3E50", font=("Arial", 9)).grid(
-            row=0, column=2, padx=(0, 5), sticky="w"
-        )
-        self.month_var = tk.IntVar(value=current_date.month)
-        self.month_spinbox = tk.Spinbox(
-            date_frame,
-            from_=1,
-            to=12,
-            width=5,
-            font=("Arial", 10),
-            textvariable=self.month_var,
-            command=self.validate_date,
-            wrap=True
-        )
-        self.month_spinbox.grid(row=0, column=3, padx=(0, 10))
-        self.month_spinbox.bind("<Return>", self.focus_on_next_widget)
-
-        # Year Spinbox
-        tk.Label(date_frame, text="Year:", bg=self.bg, fg="#2C3E50", font=("Arial", 9)).grid(
-            row=0, column=4, padx=(0, 5), sticky="w"
-        )
-        self.year_var = tk.IntVar(value=current_date.year)
-        self.year_spinbox = tk.Spinbox(
-            date_frame,
-            from_=current_date.year,
-            to=current_date.year + 20,
-            width=8,
-            font=("Arial", 10),
-            textvariable=self.year_var,
-            command=self.validate_date,
-            wrap=False
-        )
-        self.year_spinbox.grid(row=0, column=5, padx=(0, 10))
-        self.year_spinbox.bind("<Return>", self.focus_on_next_widget)
-
-        # Date display label (shows formatted date)
-        self.date_display = tk.Label(
-            date_frame,
-            text=current_date.strftime("%d/%m/%Y"),
-            bg=self.bg,
-            fg="#27AE60",
-            font=("Arial", 10, "bold")
-        )
-        self.date_display.grid(row=0, column=6, padx=(10, 0))
-
-        # Bind events to validate date when values change
-        self.day_spinbox.bind('<KeyRelease>', self.on_date_change)
-        self.month_spinbox.bind('<KeyRelease>', self.on_date_change)
-        self.year_spinbox.bind('<KeyRelease>', self.on_date_change)
+        self.expiry_date_entry.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
 
         tk.Label(medicine_frame, text="Supplier:", bg=self.bg, fg="#2C3E50").grid(
             row=5, column=0, padx=10, pady=5, sticky="e"
@@ -1170,8 +1113,7 @@ class System_Management(tk.Frame):
         self.description_entry.delete("1.0", tk.END)
         self.price_entry.delete(0, tk.END)
         self.batch_number_entry.delete(0, tk.END)
-        current_date = date.today()
-        self.set_expiry_date(current_date)
+        self.set_expiry_date(date.today())
         self.supplier_var.set("")
         self.supplier_id = None
 
@@ -1195,55 +1137,17 @@ class System_Management(tk.Frame):
         self.reason_entry.delete("1.0", tk.END)
         self.medicine_id = None
 
-    def validate_date(self):
-        """Validate the date and update display"""
-        try:
-            day = int(self.day_var.get())
-            month = int(self.month_var.get())
-            year = int(self.year_var.get())
-            # Check if date is valid
-            selected_date = datetime(year, month, day).date()
-            
-            # Update display
-            self.date_display.config(
-                text=selected_date.strftime("%d/%m/%Y"),
-                fg="#27AE60"
-            )
-            
-            # Adjust day if invalid for selected month
-            max_day = calendar.monthrange(year, month)[1]
-            self.day_spinbox.config(to=max_day)
-            if day > max_day:
-                self.day_var.set(max_day)
-                
-        except ValueError:
-            self.date_display.config(text="Invalid Date", fg="#E74C3C")
-
-    def on_date_change(self, event=None):
-        """Handle date change events"""
-        self.validate_date()
-
     def set_expiry_date(self, date_obj):
         """Set the expiry date from a date object"""
         if date_obj:
-            self.day_spinbox.delete(0, tk.END)
-            self.day_spinbox.insert(0, str(date_obj.day))
-            
-            self.month_spinbox.delete(0, tk.END)
-            self.month_spinbox.insert(0, str(date_obj.month))
-            
-            self.year_spinbox.delete(0, tk.END)
-            self.year_spinbox.insert(0, str(date_obj.year))
+            self.datevar.set(date_obj)
             
             self.validate_date()
 
     def get_expiry_date(self):
         """Get the selected expiry date"""
         try:
-            day = int(self.day_var.get())
-            month = int(self.month_var.get())
-            year = int(self.year_var.get())
-            return datetime(year, month, day).date()
+            return self.datevar.get()
         except ValueError:
             return None
 
@@ -1355,7 +1259,7 @@ class Analytics_and_Reports(tk.Frame):
             font=("Arial", 11, "bold"),
             relief="flat",
             cursor="hand2"
-        ).pack(side="left", pady=10)
+        ).pack( pady=10)
 
         self.financial_text = tk.Text(summary_frame, height=20, width=80, font=("Arial", 10))
         self.financial_text.pack(fill="both", expand=True)
