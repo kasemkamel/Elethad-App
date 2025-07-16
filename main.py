@@ -702,12 +702,13 @@ class System_Management(tk.Frame):
             foreground='black', 
             borderwidth=1,
             font=("Arial", 10),
+            textvariable= self.datevar,
             date_pattern='dd/mm/yyyy',         
             mindate=date.today(),  # Prevent past dates
             maxdate=date.today().replace(year=date.today().year + 5),
-            takefocus=False,
         )
         self.expiry_date_entry.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
+        self.expiry_date_entry.bind("<Return>", self.focus_on_next_widget)
 
         tk.Label(medicine_frame, text="Supplier:", bg=self.bg, fg="#2C3E50").grid(
             row=5, column=0, padx=10, pady=5, sticky="e"
@@ -1141,8 +1142,6 @@ class System_Management(tk.Frame):
         """Set the expiry date from a date object"""
         if date_obj:
             self.datevar.set(date_obj)
-            
-            self.validate_date()
 
     def get_expiry_date(self):
         """Get the selected expiry date"""
