@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from tkinter import messagebox
 from contextlib import contextmanager
 
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -483,6 +484,13 @@ class Medicine:
             ''')
             return cursor.fetchall()
 
+    def get_medicine_count(self):
+        """Get total count of medicines"""
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM Medicines')
+            return cursor.fetchone()[0]
+
     def search_medicines(self, search_term):
         """Search medicines by name or description"""
         with self.db.get_connection() as conn:
@@ -524,6 +532,13 @@ class Supplier:
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM Suppliers WHERE status = "active" ORDER BY name')
             return cursor.fetchall()
+
+    def get_supplier_count(self):
+        """Get total count of suppliers"""
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM Suppliers WHERE status = "active"')
+            return cursor.fetchone()[0]
 
     def get_supplier_medicines(self, supplier_id):
         """Get all medicines from a specific supplier"""
@@ -626,6 +641,159 @@ class Reports:
                 'total_stock_value': total_stock_value,
                 'transactions': transactions
             }
+        
+    def get_total_monthly_sales_report(self, month=None, year=None) -> float:
+        """
+        Generate total monthly sales report for specified month and year.
+        
+        Args:
+            month (int, optional): Month (1-12). Defaults to current month.
+            year (int, optional): Year. Defaults to current year.
+        
+        Returns:
+            float: Total sales amount for the specified month
+        """
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+            SELECT 
+                SUM(COALESCE(t.total_amount, t.quantity * t.unit_price, 0)) as total_sales,
+                COUNT(*) as transaction_count,
+                SUM(t.quantity) as total_quantity_sold
+            FROM Transactions t
+            WHERE t.transaction_type = 'outgoing'
+            AND strftime('%Y', t.date) = ?
+            AND strftime('%m', t.date) = ?
+            AND t.total_amount IS NOT NULL
+            ''', (str(year), f"{month:02d}"))
+            
+            result = cursor.fetchone()
+            
+            if result and result[0]:
+                total_sales = float(result[0])
+                transaction_count = result[1]
+                total_quantity = result[2]
+                
+                logger.info(f"Monthly sales report for {month}/{year}: "
+                        f"Total Sales: ${total_sales:.2f}, "
+                        f"Transactions: {transaction_count}, "
+                        f"Items Sold: {total_quantity}")
+                
+                return total_sales
+            else:
+                logger.info(f"No sales data found for {month}/{year}")
+                return 0.0
+    
+    def get_detailed_monthly_sales_report(self, now, month=None, year=None) -> dict:
+        """
+        Generate detailed monthly sales report with breakdown by medicine.
+        
+        Args:
+            month (int, optional): Month (1-12). Defaults to current month.
+            year (int, optional): Year. Defaults to current year.
+        
+        Returns:
+            dict: Detailed sales report including total, breakdown by medicine, and summary stats
+        """
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+            SELECT 
+                m.name as medicine_name,
+                m.category,
+                SUM(t.quantity) as total_quantity_sold,
+                AVG(t.unit_price) as avg_unit_price,
+                SUM(COALESCE(t.total_amount, t.quantity * t.unit_price, 0)) as total_revenue,
+                COUNT(*) as transaction_count,
+                s.name as supplier_name
+            FROM Transactions t
+            JOIN Medicines m ON t.medicine_id = m.id
+            LEFT JOIN Suppliers s ON m.supplier_id = s.id
+            WHERE t.transaction_type = 'outgoing'
+            AND strftime('%Y', t.date) = ?
+            AND strftime('%m', t.date) = ?
+            AND t.total_amount IS NOT NULL
+            GROUP BY m.id, m.name, m.category, s.name
+            ORDER BY total_revenue DESC
+            ''', (str(year), f"{month:02d}"))
+            
+            medicine_breakdown = cursor.fetchall()
+
+            cursor.execute('''
+            SELECT 
+                SUM(COALESCE(t.total_amount, t.quantity * t.unit_price, 0)) as total_sales,
+                COUNT(*) as total_transactions,
+                SUM(t.quantity) as total_quantity_sold,
+                COUNT(DISTINCT t.medicine_id) as unique_medicines_sold
+            FROM Transactions t
+            WHERE t.transaction_type = 'outgoing'
+            AND strftime('%Y', t.date) = ?
+            AND strftime('%m', t.date) = ?
+            AND t.total_amount IS NOT NULL
+            ''', (str(year), f"{month:02d}"))
+            
+            totals = cursor.fetchone()
+            
+            cursor.execute('''
+            SELECT 
+                m.name,
+                SUM(t.quantity) as quantity_sold,
+                SUM(COALESCE(t.total_amount, t.quantity * t.unit_price, 0)) as revenue
+            FROM Transactions t
+            JOIN Medicines m ON t.medicine_id = m.id
+            WHERE t.transaction_type = 'outgoing'
+            AND strftime('%Y', t.date) = ?
+            AND strftime('%m', t.date) = ?
+            AND t.total_amount IS NOT NULL
+            GROUP BY m.id, m.name
+            ORDER BY quantity_sold DESC
+            LIMIT 10
+            ''', (str(year), f"{month:02d}"))
+            
+            top_selling = cursor.fetchall()
+            
+            cursor.execute('''
+            SELECT 
+                m.category,
+                SUM(COALESCE(t.total_amount, t.quantity * t.unit_price, 0)) as category_revenue,
+                SUM(t.quantity) as category_quantity,
+                COUNT(*) as category_transactions
+            FROM Transactions t
+            JOIN Medicines m ON t.medicine_id = m.id
+            WHERE t.transaction_type = 'outgoing'
+            AND strftime('%Y', t.date) = ?
+            AND strftime('%m', t.date) = ?
+            AND t.total_amount IS NOT NULL
+            GROUP BY m.category
+            ORDER BY category_revenue DESC
+            ''', (str(year), f"{month:02d}"))
+            
+            category_breakdown = cursor.fetchall()
+            
+            report = {
+                'month': month,
+                'year': year,
+                'total_sales': float(totals[0]) if totals[0] else 0.0,
+                'total_transactions': totals[1] if totals[1] else 0,
+                'total_quantity_sold': totals[2] if totals[2] else 0,
+                'unique_medicines_sold': totals[3] if totals[3] else 0,
+                'medicine_breakdown': [dict(row) for row in medicine_breakdown],
+                'top_selling_medicines': [dict(row) for row in top_selling],
+                'category_breakdown': [dict(row) for row in category_breakdown],
+                'generated_at': now.isoformat()
+            }
+            
+            logger.info(f"Detailed monthly sales report generated for {month}/{year}: "
+                    f"Total Sales: ${report['total_sales']:.2f}")
+            
+            return report
+
+
+
+
+
+
 
 
 # # Example usage and testing

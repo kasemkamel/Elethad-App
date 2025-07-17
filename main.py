@@ -318,12 +318,13 @@ class ResizableImageFrame(tk.Frame):
             self.canvas.itemconfig(self.image_id, image=self.image)
             self.canvas.config(width=new_width, height=new_height)
 
-# not complete =>> 13/7/2025 الكروت الاربعة بس ان شاء الله بكرة
+
 class Dashboard(tk.Frame):
     """ """
     def __init__(self, box, parent):
         self.bg = "#ECF0F1"
         super().__init__(box, bg=self.bg)
+        self.parent = parent
         self.create_widgets()
 
     def create_widgets(self):
@@ -355,13 +356,16 @@ class Dashboard(tk.Frame):
     def create_info_cards(self):
         cards_frame = tk.Frame(self, bg=self.bg, pady=20)
         cards_frame.pack(fill="x", padx=50)
+        total_med = self.parent.medicine_manager.get_medicine_count()
+        active_supp = self.parent.supplier_manager.get_supplier_count()
+        low_stock = len(self.parent.medicine_manager.get_low_stock_medicines())
+        monthly_sales = self.parent.reports.get_total_monthly_sales_report(date.today().month,date.today().year)  # Placeholder value for monthly sales
 
-        # not complete =>> عايزين بيانات حقيقية بقا بس بكرة شان تعبت 
         cards = [
-            ("Total Medicines", "125", "#3498DB"),
-            ("Active Suppliers", "18", "#2ECC71"),
-            ("Stock Alerts", "5", "#E74C3C"),
-            ("Monthly Sales", "$45,280", "#F39C12")
+            ("Total Medicines", total_med, "#3498DB"),
+            ("Active Suppliers", active_supp, "#2ECC71"),
+            ("Stock Alerts", low_stock, "#E74C3C"),
+            ("Monthly Sales", monthly_sales, "#F39C12")
         ]
 
         for i, (title, value, color) in enumerate(cards):
@@ -703,9 +707,9 @@ class System_Management(tk.Frame):
             borderwidth=1,
             font=("Arial", 10),
             textvariable= self.datevar,
-            date_pattern='dd/mm/yyyy',         
+            date_pattern='YYYY-MM-DD',         
             mindate=date.today(),  # Prevent past dates
-            maxdate=date.today().replace(year=date.today().year + 5),
+            maxdate=date.today().replace(year=date.today().year + 10),
         )
         self.expiry_date_entry.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
         self.expiry_date_entry.bind("<Return>", self.focus_on_next_widget)
