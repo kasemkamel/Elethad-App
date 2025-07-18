@@ -7,6 +7,219 @@ from database_new_Architecture import Database, User, Medicine, Supplier, Report
 from datetime import date, datetime
 import calendar
 
+
+
+class ActivityMonitor:
+    """Monitor user activity and handle automatic logout after inactivity"""
+    
+    def __init__(self, parent, timeout_minutes=10):
+        self.parent = parent
+        self.timeout_minutes = timeout_minutes
+        self.timeout_ms = timeout_minutes * 60 * 100 # ms
+        self.last_activity = datetime.now()
+        self.warning_shown = False
+        self.logout_job = None
+        self.warning_job = None
+        self.check_job = None
+        self.is_active = False
+        
+        self.activity_events = [
+            '<Motion>', '<Button-1>', '<Button-2>', '<Button-3>', 
+            '<Key>', '<KeyPress>', '<KeyRelease>', '<FocusIn>', 
+            '<MouseWheel>', '<Button-4>', '<Button-5>'
+        ]
+        
+    def start_monitoring(self):
+        """Start monitoring user activity"""
+        self.is_active = True
+        self.reset_timer()
+        self.bind_activity_events()
+        self.schedule_activity_check()
+        
+    def stop_monitoring(self):
+        """Stop monitoring user activity"""
+        self.is_active = False
+        self.cancel_all_jobs()
+        self.unbind_activity_events()
+        
+    def bind_activity_events(self):
+        """Bind activity events to the main window and all child widgets"""
+        def bind_recursive(widget):
+            for event in self.activity_events:
+                widget.bind(event, self.on_activity, add=True)
+            
+            for child in widget.winfo_children():
+                bind_recursive(child)
+        
+        bind_recursive(self.parent)
+        
+    def unbind_activity_events(self):
+        """Unbind activity events from all widgets"""
+        def unbind_recursive(widget):
+            for event in self.activity_events:
+                try:
+                    widget.unbind(event)
+                except:
+                    pass
+            
+            for child in widget.winfo_children():
+                unbind_recursive(child)
+        
+        unbind_recursive(self.parent)
+        
+    def on_activity(self, event=None):
+        """Handle user activity"""
+        if not self.is_active:
+            return
+            
+        self.last_activity = datetime.now()
+        self.warning_shown = False
+        
+        self.cancel_all_jobs()
+        self.reset_timer()
+        
+    def reset_timer(self):
+        """Reset the inactivity timer"""
+        warning_time = max(1, (self.timeout_minutes - 2) * 60 * 1000)
+        self.warning_job = self.parent.after(warning_time, self.show_warning)
+        
+        self.logout_job = self.parent.after(self.timeout_ms, self.auto_logout)
+        
+    def schedule_activity_check(self):
+        """Schedule periodic activity checks"""
+        if self.is_active:
+            self.check_activity()
+            self.check_job = self.parent.after(30000, self.schedule_activity_check)
+            
+    def check_activity(self):
+        """Check if user has been inactive for too long"""
+        if not self.is_active:
+            return
+            
+        time_since_activity = (datetime.now() - self.last_activity).total_seconds()
+        
+        if time_since_activity >= (self.timeout_minutes * 60):
+            self.auto_logout()
+        elif time_since_activity >= ((self.timeout_minutes - 2) * 60) and not self.warning_shown:
+            self.show_warning()
+            
+    def show_warning(self):
+        """Show inactivity warning dialog"""
+        if not self.is_active or self.warning_shown:
+            return
+            
+        self.warning_shown = True
+        
+        warning_window = tk.Toplevel(self.parent)
+        warning_window.title("Session Timeout Warning")
+        warning_window.geometry("400x200")
+        warning_window.resizable(False, False)
+        warning_window.grab_set()
+        warning_window.focus_force()
+        
+        warning_window.update_idletasks()
+        x = (warning_window.winfo_screenwidth() // 2) - (400 // 2)
+        y = (warning_window.winfo_screenheight() // 2) - (200 // 2)
+        warning_window.geometry(f'400x200+{x}+{y}')
+        
+        warning_window.configure(bg="#2C3E50")
+        
+        main_frame = tk.Frame(warning_window, bg="#2C3E50", padx=20, pady=20)
+        main_frame.pack(fill="both", expand=True)
+        
+        warning_label = tk.Label(
+            main_frame,
+            text="⚠️ Session Timeout Warning",
+            font=("Arial", 16, "bold"),
+            bg="#2C3E50",
+            fg="#E74C3C"
+        )
+        warning_label.pack(pady=(0, 10))
+        
+        message_label = tk.Label(
+            main_frame,
+            text="You will be logged out in 2 minutes due to inactivity.\nClick 'Stay Logged In' to continue your session.",
+            font=("Arial", 12),
+            bg="#2C3E50",
+            fg="#ECF0F1",
+            justify="center"
+        )
+        message_label.pack(pady=10)
+        
+        button_frame = tk.Frame(main_frame, bg="#2C3E50")
+        button_frame.pack(pady=20)
+        
+        def stay_logged_in():
+            self.on_activity() 
+            warning_window.destroy()
+            
+        def logout_now():
+            warning_window.destroy()
+            self.auto_logout()
+            
+        stay_button = tk.Button(
+            button_frame,
+            text="Stay Logged In",
+            command=stay_logged_in,
+            bg="#27AE60",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            relief="flat",
+            cursor="hand2",
+            padx=20,
+            pady=10
+        )
+        stay_button.pack(side="left", padx=10)
+        
+        logout_button = tk.Button(
+            button_frame,
+            text="Logout Now",
+            command=logout_now,
+            bg="#E74C3C",
+            fg="white",
+            font=("Arial", 12, "bold"),
+            relief="flat",
+            cursor="hand2",
+            padx=20,
+            pady=10
+        )
+        logout_button.pack(side="left", padx=10)
+        
+        warning_window.after(120000, lambda: warning_window.destroy() if warning_window.winfo_exists() else None)
+        
+    def auto_logout(self):
+        """Automatically logout the user"""
+        if not self.is_active:
+            return
+            
+        self.stop_monitoring()
+        
+        try:
+            from tkinter import messagebox
+            messagebox.showinfo(
+                "Session Expired", 
+                f"You have been logged out due to {self.timeout_minutes} minutes of inactivity."
+            )
+        except:
+            pass
+        
+        self.parent.logout()
+        
+    def cancel_all_jobs(self):
+        """Cancel all scheduled jobs"""
+        if self.logout_job:
+            self.parent.after_cancel(self.logout_job)
+            self.logout_job = None
+            
+        if self.warning_job:
+            self.parent.after_cancel(self.warning_job)
+            self.warning_job = None
+            
+        if self.check_job:
+            self.parent.after_cancel(self.check_job)
+            self.check_job = None
+
+
 class LoginWindow(tk.Toplevel):
     """A simple login window that prompts for username and password."""
 
@@ -377,7 +590,7 @@ class Dashboard(tk.Frame):
         total_med = self.parent.medicine_manager.get_medicine_count()
         active_supp = self.parent.supplier_manager.get_supplier_count()
         low_stock = len(self.parent.medicine_manager.get_low_stock_medicines())
-        monthly_sales = self.parent.reports.get_total_monthly_sales_report(date.today().month,date.today().year)  # Placeholder value for monthly sales
+        monthly_sales = self.parent.reports.get_total_monthly_sales_report(date.today().month,date.today().year)
 
         cards = [
             ("Total Medicines", total_med, "#3498DB"),
@@ -459,30 +672,685 @@ class Dashboard(tk.Frame):
         gallery_frame.grid_rowconfigure(0, weight=1)
 
 
+
+
+
+
+
+
+
+
 class Financial_Reports(tk.Frame):
     """ """
     def __init__(self, box, parent):
-        super().__init__(box, bg="#E8F6F3")
-        self.create_content("Financial Reports", "📊", "View and analyze financial data")
+        self.bg = "#E8F6F3"
+        super().__init__(box, bg=self.bg)
+        self.parent = parent
+        self.create_scrollable_widgets()
 
-    def create_content(self, title, icon, description):
-        container = tk.Frame(self, bg=self['bg'])
-        container.pack(expand=True, fill="both")
+    def create_scrollable_widgets(self):
+        """Create scrollable content area"""
 
-        icon_label = tk.Label(
-            container, text=icon, font=("Arial", 48), bg=self['bg'], fg="#2C3E50"
+        self.canvas = tk.Canvas(self, bg=self.bg, highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas, bg=self.bg)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")),
         )
-        icon_label.pack(pady=(50, 20))
+
+        self.canvas_window = self.canvas.create_window(
+            (0, 0), window=self.scrollable_frame, anchor="nw"
+        )
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.scrollbar.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both", expand=True)
+
+        self.canvas.bind("<Configure>", self.on_canvas_configure)
+        self.canvas.bind("<MouseWheel>", self.on_mousewheel)
+        self.bind_all("<MouseWheel>", self.on_mousewheel)
+
+        self.create_content()
+
+    def on_canvas_configure(self, event):
+            self.canvas.itemconfig(self.canvas_window, width=event.width)
+
+    def on_mousewheel(self, event):
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def create_content(self):
+        """Create the main content for financial reports"""
+        # Title Section
+        title_frame = tk.Frame(self.scrollable_frame, bg=self.bg, pady=20)
+        title_frame.pack(fill="x")
 
         title_label = tk.Label(
-            container, text=title, font=("Arial", 24, "bold"), bg=self['bg'], fg="#2C3E50"
+            title_frame,
+            text="📊 Financial Reports",
+            font=("Arial", 24, "bold"),
+            fg="#2C3E50",
+            bg=self.bg,
         )
-        title_label.pack(pady=10)
+        title_label.pack()
 
-        desc_label = tk.Label(
-            container, text=description, font=("Arial", 14), bg=self['bg'], fg="#7F8C8D"
+        subtitle_label = tk.Label(
+            title_frame,
+            text="Comprehensive financial analysis and reporting dashboard",
+            font=("Arial", 12),
+            fg="#7F8C8D",
+            bg=self.bg,
         )
-        desc_label.pack(pady=10)
+        subtitle_label.pack(pady=(5, 0))
+
+        # Create notebook for different report types
+        self.notebook = ttk.Notebook(self.scrollable_frame)
+        self.notebook.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Create tabs
+        self.create_summary_tab()
+        self.create_sales_tab()
+        self.create_purchase_tab()
+        self.create_inventory_tab()
+        self.create_profit_loss_tab()
+
+    def create_summary_tab(self):
+        """Create financial summary tab"""
+        summary_frame = tk.Frame(self.notebook, bg="#FFFFFF")
+        self.notebook.add(summary_frame, text="Summary")
+
+        # Control panel
+        control_panel = tk.Frame(summary_frame, bg="#F8F9FA", relief="solid", bd=1)
+        control_panel.pack(fill="x", padx=10, pady=10)
+
+        tk.Label(
+            control_panel,
+            text="Financial Summary Dashboard",
+            font=("Arial", 14, "bold"),
+            bg="#F8F9FA",
+            fg="#2C3E50"
+        ).pack(pady=10)
+
+        # Date range selection
+        date_frame = tk.Frame(control_panel, bg="#F8F9FA")
+        date_frame.pack(pady=10)
+
+        tk.Label(date_frame, text="From:", bg="#F8F9FA", fg="#2C3E50").grid(row=0, column=0, padx=5, pady=5)
+        self.summary_start_date = DateEntry(
+            date_frame, width=12, background='darkblue',
+            foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd'
+        )
+        self.summary_start_date.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(date_frame, text="To:", bg="#F8F9FA", fg="#2C3E50").grid(row=0, column=2, padx=5, pady=5)
+        self.summary_end_date = DateEntry(
+            date_frame, width=12, background='darkblue',
+            foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd'
+        )
+        self.summary_end_date.grid(row=0, column=3, padx=5, pady=5)
+
+        tk.Button(
+            date_frame,
+            text="Generate Summary",
+            command=self.generate_financial_summary,
+            bg="#3498DB",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            relief="flat",
+            cursor="hand2"
+        ).grid(row=0, column=4, padx=10, pady=5)
+
+        # Summary cards container
+        self.summary_cards_frame = tk.Frame(summary_frame, bg="#FFFFFF")
+        self.summary_cards_frame.pack(fill="x", padx=20, pady=20)
+
+        # Summary text area
+        text_frame = tk.Frame(summary_frame, bg="#FFFFFF")
+        text_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        scrollbar = ttk.Scrollbar(text_frame)
+        scrollbar.pack(side="right", fill="y")
+
+        self.summary_text = tk.Text(
+            text_frame,
+            height=15,
+            font=("Courier", 10),
+            bg="#F8F9FA",
+            fg="#2C3E50",
+            yscrollcommand=scrollbar.set
+        )
+        self.summary_text.pack(fill="both", expand=True)
+        scrollbar.config(command=self.summary_text.yview)
+
+    def create_sales_tab(self):
+        """Create sales report tab"""
+        sales_frame = tk.Frame(self.notebook, bg="#FFFFFF")
+        self.notebook.add(sales_frame, text="Sales Reports")
+
+        # Control panel
+        control_panel = tk.Frame(sales_frame, bg="#E8F8F5", relief="solid", bd=1)
+        control_panel.pack(fill="x", padx=10, pady=10)
+
+        tk.Label(
+            control_panel,
+            text="Sales Analysis & Reports",
+            font=("Arial", 14, "bold"),
+            bg="#E8F8F5",
+            fg="#2C3E50"
+        ).pack(pady=10)
+
+        # Filters
+        filter_frame = tk.Frame(control_panel, bg="#E8F8F5")
+        filter_frame.pack(pady=10)
+
+        # Period selection
+        tk.Label(filter_frame, text="Period:", bg="#E8F8F5", fg="#2C3E50").grid(row=0, column=0, padx=5, pady=5)
+        self.sales_period_var = tk.StringVar(value="monthly")
+        period_combo = ttk.Combobox(
+            filter_frame,
+            textvariable=self.sales_period_var,
+            values=["daily", "weekly", "monthly", "quarterly", "yearly"],
+            state="readonly",
+            width=10
+        )
+        period_combo.grid(row=0, column=1, padx=5, pady=5)
+
+        # Date range
+        tk.Label(filter_frame, text="From:", bg="#E8F8F5", fg="#2C3E50").grid(row=0, column=2, padx=5, pady=5)
+        self.sales_start_date = DateEntry(
+            filter_frame, width=12, background='darkblue',
+            foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd'
+        )
+        self.sales_start_date.grid(row=0, column=3, padx=5, pady=5)
+
+        tk.Label(filter_frame, text="To:", bg="#E8F8F5", fg="#2C3E50").grid(row=0, column=4, padx=5, pady=5)
+        self.sales_end_date = DateEntry(
+            filter_frame, width=12, background='darkblue',
+            foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd'
+        )
+        self.sales_end_date.grid(row=0, column=5, padx=5, pady=5)
+
+        tk.Button(
+            filter_frame,
+            text="Generate Sales Report",
+            command=self.generate_sales_report,
+            bg="#27AE60",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            relief="flat",
+            cursor="hand2"
+        ).grid(row=0, column=6, padx=10, pady=5)
+
+        # Sales data table
+        table_frame = tk.Frame(sales_frame, bg="#FFFFFF")
+        table_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        columns = ("Date", "Medicine", "Quantity", "Unit Price", "Total", "Profit")
+        self.sales_tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
+
+        for col in columns:
+            self.sales_tree.heading(col, text=col)
+            self.sales_tree.column(col, width=100, anchor="center")
+
+        # Scrollbars
+        v_scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.sales_tree.yview)
+        h_scrollbar = ttk.Scrollbar(table_frame, orient="horizontal", command=self.sales_tree.xview)
+        
+        self.sales_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        
+        self.sales_tree.grid(row=0, column=0, sticky="nsew")
+        v_scrollbar.grid(row=0, column=1, sticky="ns")
+        h_scrollbar.grid(row=1, column=0, sticky="ew")
+        
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
+    def create_purchase_tab(self):
+        """Create purchase report tab"""
+        purchase_frame = tk.Frame(self.notebook, bg="#FFFFFF")
+        self.notebook.add(purchase_frame, text="Purchase Reports")
+
+        # Control panel
+        control_panel = tk.Frame(purchase_frame, bg="#FDF2E9", relief="solid", bd=1)
+        control_panel.pack(fill="x", padx=10, pady=10)
+
+        tk.Label(
+            control_panel,
+            text="Purchase Analysis & Reports",
+            font=("Arial", 14, "bold"),
+            bg="#FDF2E9",
+            fg="#2C3E50"
+        ).pack(pady=10)
+
+        # Filters
+        filter_frame = tk.Frame(control_panel, bg="#FDF2E9")
+        filter_frame.pack(pady=10)
+
+        tk.Label(filter_frame, text="Supplier:", bg="#FDF2E9", fg="#2C3E50").grid(row=0, column=0, padx=5, pady=5)
+        self.supplier_var = tk.StringVar()
+        self.supplier_combo = ttk.Combobox(
+            filter_frame,
+            textvariable=self.supplier_var,
+            width=15
+        )
+        self.supplier_combo.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(filter_frame, text="From:", bg="#FDF2E9", fg="#2C3E50").grid(row=0, column=2, padx=5, pady=5)
+        self.purchase_start_date = DateEntry(
+            filter_frame, width=12, background='darkblue',
+            foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd'
+        )
+        self.purchase_start_date.grid(row=0, column=3, padx=5, pady=5)
+
+        tk.Label(filter_frame, text="To:", bg="#FDF2E9", fg="#2C3E50").grid(row=0, column=4, padx=5, pady=5)
+        self.purchase_end_date = DateEntry(
+            filter_frame, width=12, background='darkblue',
+            foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd'
+        )
+        self.purchase_end_date.grid(row=0, column=5, padx=5, pady=5)
+
+        tk.Button(
+            filter_frame,
+            text="Generate Purchase Report",
+            command=self.generate_purchase_report,
+            bg="#E67E22",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            relief="flat",
+            cursor="hand2"
+        ).grid(row=0, column=6, padx=10, pady=5)
+
+        # Purchase data table
+        table_frame = tk.Frame(purchase_frame, bg="#FFFFFF")
+        table_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        columns = ("Date", "Supplier", "Medicine", "Quantity", "Unit Cost", "Total Cost")
+        self.purchase_tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
+
+        for col in columns:
+            self.purchase_tree.heading(col, text=col)
+            self.purchase_tree.column(col, width=120, anchor="center")
+
+        v_scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.purchase_tree.yview)
+        h_scrollbar = ttk.Scrollbar(table_frame, orient="horizontal", command=self.purchase_tree.xview)
+        
+        self.purchase_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        
+        self.purchase_tree.grid(row=0, column=0, sticky="nsew")
+        v_scrollbar.grid(row=0, column=1, sticky="ns")
+        h_scrollbar.grid(row=1, column=0, sticky="ew")
+        
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
+    def create_inventory_tab(self):
+        """Create inventory valuation tab"""
+        inventory_frame = tk.Frame(self.notebook, bg="#FFFFFF")
+        self.notebook.add(inventory_frame, text="Inventory Valuation")
+
+        # Control panel
+        control_panel = tk.Frame(inventory_frame, bg="#EBF5FB", relief="solid", bd=1)
+        control_panel.pack(fill="x", padx=10, pady=10)
+
+        tk.Label(
+            control_panel,
+            text="Inventory Valuation & Analysis",
+            font=("Arial", 14, "bold"),
+            bg="#EBF5FB",
+            fg="#2C3E50"
+        ).pack(pady=10)
+
+        button_frame = tk.Frame(control_panel, bg="#EBF5FB")
+        button_frame.pack(pady=10)
+
+        tk.Button(
+            button_frame,
+            text="Current Inventory Value",
+            command=self.generate_inventory_valuation,
+            bg="#3498DB",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            relief="flat",
+            cursor="hand2"
+        ).pack(side="left", padx=5)
+
+        tk.Button(
+            button_frame,
+            text="Low Stock Alert",
+            command=self.generate_low_stock_report,
+            bg="#E74C3C",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            relief="flat",
+            cursor="hand2"
+        ).pack(side="left", padx=5)
+
+        tk.Button(
+            button_frame,
+            text="Expiry Alert",
+            command=self.generate_expiry_report,
+            bg="#F39C12",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            relief="flat",
+            cursor="hand2"
+        ).pack(side="left", padx=5)
+
+        # Inventory data table
+        table_frame = tk.Frame(inventory_frame, bg="#FFFFFF")
+        table_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        columns = ("Medicine", "Batch", "Quantity", "Unit Price", "Total Value", "Expiry Date", "Status")
+        self.inventory_tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
+
+        for col in columns:
+            self.inventory_tree.heading(col, text=col)
+            self.inventory_tree.column(col, width=100, anchor="center")
+
+        v_scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.inventory_tree.yview)
+        h_scrollbar = ttk.Scrollbar(table_frame, orient="horizontal", command=self.inventory_tree.xview)
+        
+        self.inventory_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        
+        self.inventory_tree.grid(row=0, column=0, sticky="nsew")
+        v_scrollbar.grid(row=0, column=1, sticky="ns")
+        h_scrollbar.grid(row=1, column=0, sticky="ew")
+        
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
+    def create_profit_loss_tab(self):
+        """Create profit & loss statement tab"""
+        pl_frame = tk.Frame(self.notebook, bg="#FFFFFF")
+        self.notebook.add(pl_frame, text="Profit & Loss")
+
+        # Control panel
+        control_panel = tk.Frame(pl_frame, bg="#F4F6F6", relief="solid", bd=1)
+        control_panel.pack(fill="x", padx=10, pady=10)
+
+        tk.Label(
+            control_panel,
+            text="Profit & Loss Statement",
+            font=("Arial", 14, "bold"),
+            bg="#F4F6F6",
+            fg="#2C3E50"
+        ).pack(pady=10)
+
+        # Period selection
+        period_frame = tk.Frame(control_panel, bg="#F4F6F6")
+        period_frame.pack(pady=10)
+
+        tk.Label(period_frame, text="Period:", bg="#F4F6F6", fg="#2C3E50").grid(row=0, column=0, padx=5, pady=5)
+        self.pl_period_var = tk.StringVar(value="monthly")
+        period_combo = ttk.Combobox(
+            period_frame,
+            textvariable=self.pl_period_var,
+            values=["monthly", "quarterly", "yearly"],
+            state="readonly",
+            width=10
+        )
+        period_combo.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(period_frame, text="Year:", bg="#F4F6F6", fg="#2C3E50").grid(row=0, column=2, padx=5, pady=5)
+        current_year = datetime.now().year
+        self.pl_year_var = tk.StringVar(value=str(current_year))
+        year_combo = ttk.Combobox(
+            period_frame,
+            textvariable=self.pl_year_var,
+            values=[str(year) for year in range(current_year-5, current_year+2)],
+            state="readonly",
+            width=8
+        )
+        year_combo.grid(row=0, column=3, padx=5, pady=5)
+
+        tk.Button(
+            period_frame,
+            text="Generate P&L Statement",
+            command=self.generate_pl_statement,
+            bg="#8E44AD",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            relief="flat",
+            cursor="hand2"
+        ).grid(row=0, column=4, padx=10, pady=5)
+
+        # P&L statement display
+        pl_text_frame = tk.Frame(pl_frame, bg="#FFFFFF")
+        pl_text_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        scrollbar = ttk.Scrollbar(pl_text_frame)
+        scrollbar.pack(side="right", fill="y")
+
+        self.pl_text = tk.Text(
+            pl_text_frame,
+            height=20,
+            font=("Courier", 11),
+            bg="#F8F9FA",
+            fg="#2C3E50",
+            yscrollcommand=scrollbar.set
+        )
+        self.pl_text.pack(fill="both", expand=True)
+        scrollbar.config(command=self.pl_text.yview)
+
+    def generate_financial_summary(self):
+        """Generate comprehensive financial summary"""
+        try:
+            start_date = self.summary_start_date.get()
+            end_date = self.summary_end_date.get()
+            
+            # Clear existing content
+            for widget in self.summary_cards_frame.winfo_children():
+                widget.destroy()
+            self.summary_text.delete(1.0, tk.END)
+            
+            # Generate summary data (placeholder - replace with actual database queries)
+            total_sales = 15750.00  # Replace with actual query
+            total_purchases = 12300.00  # Replace with actual query
+            gross_profit = total_sales - total_purchases
+            profit_margin = (gross_profit / total_sales) * 100 if total_sales > 0 else 0
+            
+            # Create summary cards
+            cards_data = [
+                ("Total Sales", f"${total_sales:,.2f}", "#27AE60"),
+                ("Total Purchases", f"${total_purchases:,.2f}", "#E74C3C"),
+                ("Gross Profit", f"${gross_profit:,.2f}", "#3498DB"),
+                ("Profit Margin", f"{profit_margin:.1f}%", "#9B59B6")
+            ]
+            
+            for i, (title, value, color) in enumerate(cards_data):
+                card = tk.Frame(self.summary_cards_frame, bg=color, relief="flat", bd=0)
+                card.grid(row=0, column=i, padx=10, pady=10, sticky="ew")
+                self.summary_cards_frame.grid_columnconfigure(i, weight=1)
+                
+                tk.Label(
+                    card, text=value, font=("Arial", 18, "bold"),
+                    fg="white", bg=color
+                ).pack(pady=(15, 5))
+                
+                tk.Label(
+                    card, text=title, font=("Arial", 11),
+                    fg="white", bg=color
+                ).pack(pady=(0, 15))
+            
+            # Generate detailed text summary
+            summary_text = f"""
+                FINANCIAL SUMMARY REPORT
+                Period: {start_date} to {end_date}
+                Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                {'='*60}
+
+                REVENUE OVERVIEW:
+                • Total Sales Revenue: ${total_sales:,.2f}
+                • Average Daily Sales: ${total_sales/30:,.2f}
+                • Number of Transactions: 145
+                • Average Transaction Value: ${total_sales/145:,.2f}
+
+                COST ANALYSIS:
+                • Total Purchase Costs: ${total_purchases:,.2f}
+                • Cost of Goods Sold: ${total_purchases:,.2f}
+                • Gross Profit: ${gross_profit:,.2f}
+                • Gross Profit Margin: {profit_margin:.1f}%
+
+                INVENTORY METRICS:
+                • Current Inventory Value: $8,450.00
+                • Inventory Turnover: 2.3x
+                • Days in Inventory: 159 days
+                • Stock-out Events: 3
+
+                TOP PERFORMING PRODUCTS:
+                1. Paracetamol 500mg - $2,350.00 (15% of sales)
+                2. Amoxicillin 250mg - $1,890.00 (12% of sales)
+                3. Ibuprofen 400mg - $1,640.00 (10% of sales)
+
+                FINANCIAL HEALTH INDICATORS:
+                • Current Ratio: 2.4:1 (Good)
+                • Quick Ratio: 1.8:1 (Adequate)
+                • Working Capital: $12,450.00
+                • Cash Flow: Positive
+
+                RECOMMENDATIONS:
+                • Focus on high-margin products
+                • Optimize inventory levels for slow-moving items
+                • Consider bulk purchasing for top sellers
+                • Review pricing strategy for competitive positioning
+            """
+            
+            self.summary_text.insert(1.0, summary_text)
+            messagebox.showinfo("Success", "Financial summary generated successfully!")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate summary: {str(e)}")
+
+    def generate_sales_report(self):
+        """Generate sales report"""
+        try:
+            # Clear existing data
+            for item in self.sales_tree.get_children():
+                self.sales_tree.delete(item)
+            
+            # Sample data (replace with actual database queries)
+            sales_data = [
+                ("2024-01-15", "Paracetamol 500mg", 50, 2.50, 125.00, 37.50),
+                ("2024-01-16", "Amoxicillin 250mg", 30, 4.20, 126.00, 45.00),
+                ("2024-01-17", "Ibuprofen 400mg", 25, 3.80, 95.00, 28.50),
+                ("2024-01-18", "Vitamin C 1000mg", 40, 1.95, 78.00, 23.40),
+                ("2024-01-19", "Aspirin 325mg", 35, 2.10, 73.50, 22.05)
+            ]
+            
+            total_sales = 0
+            total_profit = 0
+            
+            for sale in sales_data:
+                self.sales_tree.insert("", "end", values=sale)
+                total_sales += sale[4]
+                total_profit += sale[5]
+            
+            # Add totals row
+            self.sales_tree.insert("", "end", values=(
+                "TOTAL", "", "", "", f"${total_sales:.2f}", f"${total_profit:.2f}"
+            ), tags=("total",))
+            
+            # Configure total row appearance
+            self.sales_tree.tag_configure("total", background="#E8F6F3", font=("Arial", 10, "bold"))
+            
+            messagebox.showinfo("Success", f"Sales report generated! Total Sales: ${total_sales:.2f}")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate sales report: {str(e)}")
+
+    def generate_purchase_report(self):
+        """Generate purchase report"""
+        try:
+            # Clear existing data
+            for item in self.purchase_tree.get_children():
+                self.purchase_tree.delete(item)
+            
+            # Sample data (replace with actual database queries)
+            purchase_data = [
+                ("2024-01-10", "PharmaCorp", "Paracetamol 500mg", 100, 1.50, 150.00),
+                ("2024-01-11", "MediSupply", "Amoxicillin 250mg", 75, 2.80, 210.00),
+                ("2024-01-12", "HealthDistributors", "Ibuprofen 400mg", 60, 2.50, 150.00),
+                ("2024-01-13", "VitaWholesale", "Vitamin C 1000mg", 120, 1.30, 156.00),
+                ("2024-01-14", "Generic Solutions", "Aspirin 325mg", 90, 1.40, 126.00)
+            ]
+            
+            total_cost = 0
+            
+            for purchase in purchase_data:
+                self.purchase_tree.insert("", "end", values=purchase)
+                total_cost += purchase[5]
+            
+            # Add totals row
+            self.purchase_tree.insert("", "end", values=(
+                "TOTAL", "", "", "", "", f"${total_cost:.2f}"
+            ), tags=("total",))
+            
+            self.purchase_tree.tag_configure("total", background="#FDF2E9", font=("Arial", 10, "bold"))
+            
+            messagebox.showinfo("Success", f"Purchase report generated! Total Cost: ${total_cost:.2f}")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate purchase report: {str(e)}")
+
+    def generate_inventory_valuation(self):
+        messagebox.showinfo("clicked", "generate_inventory_valuation")
+
+    def generate_low_stock_report(self):
+        messagebox.showinfo("clicked", "generate_low_stock_report!")
+    
+    def generate_expiry_report(self):
+        messagebox.showinfo("clicked", "generate_expiry_report!")
+
+    def generate_pl_statement(self):
+        """Generate profit & loss statement"""
+        try:
+            period = self.pl_period_var.get()
+            year = self.pl_year_var.get()
+            
+            # Clear existing text
+            self.pl_text.delete(1.0, tk.END)
+            
+            # Sample P&L data (replace with actual database queries)
+            revenue = 50000.00
+            cost_of_goods_sold = 30000.00
+            operating_expenses = 10000.00
+            net_income = revenue - cost_of_goods_sold - operating_expenses
+            
+            pl_statement = f"""
+                PROFIT & LOSS STATEMENT
+                Period: {period.capitalize()} {year}
+                Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                {'='*60}
+
+                REVENUE:
+                • Total Revenue: ${revenue:,.2f}
+
+                COST OF GOODS SOLD:
+                • Cost of Goods Sold: ${cost_of_goods_sold:,.2f}
+                • Gross Profit: ${revenue - cost_of_goods_sold:,.2f}
+
+                OPERATING EXPENSES:
+                • Total Operating Expenses: ${operating_expenses:,.2f}
+
+                NET INCOME:
+                • Net Income: ${net_income:,.2f}
+            """
+            
+            self.pl_text.insert(1.0, pl_statement)
+            messagebox.showinfo("Success", "Profit & Loss statement generated successfully!")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate P&L statement: {str(e)}")
+
+
+
+
+
+
+
+
+
 
 
 class Revenue_Analysis(tk.Frame):
@@ -701,8 +1569,6 @@ class System_Management(tk.Frame):
         self.price_entry.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
         self.price_entry.bind("<Return>", self.focus_on_next_widget)
 
-
-        # Batch Number
         tk.Label(medicine_frame, text="Batch Number:", bg=self.bg, fg="#2C3E50").grid(
             row=3, column=0, padx=10, pady=5, sticky="e"
         )
@@ -726,7 +1592,7 @@ class System_Management(tk.Frame):
             font=("Arial", 10),
             textvariable= self.datevar,
             date_pattern='YYYY-MM-DD',         
-            mindate=date.today(),  # Prevent past dates
+            mindate=date.today(),
             maxdate=date.today().replace(year=date.today().year + 10),
         )
         self.expiry_date_entry.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
@@ -1292,7 +2158,6 @@ class Analytics_and_Reports(tk.Frame):
         financial_scrollbar.configure(command=self.financial_text.yview)
         self.financial_text.configure(yscrollcommand=financial_scrollbar.set)
         
-
     def generate_stock_report(self):
         try:
             for item in self.stock_tree.get_children():
@@ -1372,6 +2237,8 @@ class MedicineWarehouseApp(tk.Tk):
         self.supplier_manager = Supplier(self.db)
         self.reports = Reports(self.db)
 
+        self.activity_monitor = ActivityMonitor(self, timeout_minutes=5)
+
         self.state("zoomed")
         self.wm_minsize(800, 600)
         
@@ -1397,13 +2264,13 @@ class MedicineWarehouseApp(tk.Tk):
         login_window = LoginWindow(self)
         self.wait_window(login_window)
 
-
     def set_user(self, username, role, user_id):
         """Set user session after successful login"""
         self.user_name = username
         self.user_role = role
         self.user_id = user_id
         self.setup_main_interface()
+        self.activity_monitor.start_monitoring()
 
     def setup_main_interface(self):
         """Setup the main application interface"""
@@ -1433,8 +2300,13 @@ class MedicineWarehouseApp(tk.Tk):
         self.current_frame = frame_class(self.main_content,self)
         self.current_frame.pack(fill="both", expand=True)
 
+        if hasattr(self, 'activity_monitor') and self.activity_monitor.is_active:
+            self.activity_monitor.bind_activity_events()
+
     def logout(self):
         """Logout and return to login screen"""
+        self.activity_monitor.stop_monitoring()
+
         self.user_name = None
         self.user_role = None
         self.user_id = None
@@ -1449,8 +2321,13 @@ class MedicineWarehouseApp(tk.Tk):
             self.current_frame.destroy()
         self.show_login()
 
+    def set_session_timeout(self, minutes):
+        """Set session timeout in minutes"""
+        self.activity_monitor.timeout_minutes = minutes
+        self.activity_monitor.timeout_ms = minutes * 60 * 1000
+
 
 if __name__ == "__main__":
     app = MedicineWarehouseApp()
     app.mainloop()
-    
+
