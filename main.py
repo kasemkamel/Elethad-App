@@ -171,31 +171,47 @@ class Sidebar(tk.Frame):
         self.create_navigation_buttons()
 
     def show_Dashboard(self, event=None):
+        self.update_button_colors(0)
         self.master.switch_frame(Dashboard)
 
     def show_Financial_Reports(self):
+        self.update_button_colors(1)
         self.master.switch_frame(Financial_Reports)
 
     def show_Revenue_Analysis(self):
+        self.update_button_colors(2)
         self.master.switch_frame(Revenue_Analysis)
 
     def show_Audit_Logs(self):
+        self.update_button_colors(3)
         self.master.switch_frame(Audit_Logs)
 
     def show_Inventory_Management(self):
+        self.update_button_colors(4)
         self.master.switch_frame(Inventory_Management)
 
-    def show_frame_5(self):
+    def show_Stock_Operations(self):
+        self.update_button_colors(5)
         self.master.switch_frame(Stock_Operations)
 
     def show_System_Management(self):
+        self.update_button_colors(6)
         self.master.switch_frame(System_Management)
 
     def show_Analytics_and_Reports(self):
+        self.update_button_colors(7)
         self.master.switch_frame(Analytics_and_Reports)
+
+    def update_button_colors(self, active_index):
+        for i, btn in enumerate(self.nav_buttons):
+            if i == active_index:
+                btn.config(bg="#00568F")
+            else:
+                btn.config(bg="#3498DB")
 
     def create_navigation_buttons(self):
         buttons = []
+        self.nav_buttons = []
         
         buttons.append(("🏠 Dashboard", self.show_Dashboard))
         
@@ -208,7 +224,7 @@ class Sidebar(tk.Frame):
         elif self.parent.user_role == "warehouse_worker":
             buttons.extend([
                 ("📦 Inventory Management", self.show_Inventory_Management),
-                ("🚚 Stock Operations", self.show_frame_5),
+                ("🚚 Stock Operations", self.show_Stock_Operations),
             ])
         elif self.parent.user_role == "admin":
             buttons.extend([
@@ -216,7 +232,7 @@ class Sidebar(tk.Frame):
                 ("💰 Revenue Analysis", self.show_Revenue_Analysis),
                 ("📋 Audit Logs", self.show_Audit_Logs),
                 ("📦 Inventory Management", self.show_Inventory_Management),
-                ("🚚 Stock Operations", self.show_frame_5),
+                ("🚚 Stock Operations", self.show_Stock_Operations),
                 ("⚙️ System Management", self.show_System_Management),
                 ("📈 Analytics & Reports", self.show_Analytics_and_Reports),
             ])
@@ -234,7 +250,9 @@ class Sidebar(tk.Frame):
                 cursor="hand2",
                 activebackground="#2980B9"
             )
+            self.nav_buttons.append(btn)
             btn.pack(fill="x", padx=15, pady=5, ipady=8)
+        self.update_button_colors(0)
 
 
 class Header(tk.Frame):
@@ -1168,6 +1186,7 @@ class Analytics_and_Reports(tk.Frame):
     def __init__(self, box, parent):
         super().__init__(box, bg="#F8F9FA")
         self.parent = parent
+        self.financial_text = None
         self.create_content()
 
     def create_content(self):
@@ -1264,12 +1283,15 @@ class Analytics_and_Reports(tk.Frame):
             cursor="hand2"
         ).pack( pady=10)
 
+        financial_scrollbar = ttk.Scrollbar(summary_frame, orient="vertical")
+        financial_scrollbar.pack(side="right", fill="y")
+
         self.financial_text = tk.Text(summary_frame, height=20, width=80, font=("Arial", 10))
         self.financial_text.pack(fill="both", expand=True)
 
-        financial_scrollbar = ttk.Scrollbar(summary_frame, orient="vertical", command=self.financial_text.yview)
+        financial_scrollbar.configure(command=self.financial_text.yview)
         self.financial_text.configure(yscrollcommand=financial_scrollbar.set)
-        financial_scrollbar.pack(side="right", fill="y")
+        
 
     def generate_stock_report(self):
         try:
